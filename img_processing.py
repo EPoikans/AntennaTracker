@@ -32,9 +32,9 @@ if(knn_accuracy_test() != 100): #Kills the program if accuracy isnt 100%
 #
 initial = True
 usesamplevid = True #Used in testing a video recording
-show_full_frame = True #If true, shows a window with the OSD and treshold processed background and bounding boxes drawn
+show_full_frame = False #If true, shows a window with the OSD and treshold processed background and bounding boxes drawn
 if(usesamplevid):
-	videofeed = cv2.VideoCapture('drone_feed_test.mp4')
+	videofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
 else:
     videofeed = cv2.VideoCapture(1) #Value specifies which video input device is used camera or usb hdmi capture card
 while((videofeed.isOpened()!= True) and (initial == True)): #If videofeed is not opened during the initial launch waits 1s until it loads
