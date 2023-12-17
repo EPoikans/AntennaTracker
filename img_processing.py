@@ -1,6 +1,6 @@
 import cv2
-from multiprocessing import Process
 import numpy as np
+import concurrent.futures
 
 with np.load('knn_data.npz') as data: #Loads training dataset from images
     train_array = data['train_array']
@@ -55,13 +55,17 @@ lon_boundbox = np.array([[int(730/960*x_res),int(355/544*y_res)],[int(920/960*x_
 lon_width = abs(lon_boundbox[0,0]-lon_boundbox[1,0])
 lon_height = abs(lon_boundbox[0,1]-lon_boundbox[2,1]) #Data for getting the longitude
 
-alt_boundbox = np.array([[int(20/960*x_res),int(410/544*y_res)],[int(110/960*x_res),int(410/544*y_res)],[int(110/960*x_res),int(440/544*y_res)],[int(20/960*x_res),int(440/544*y_res)]]) 
+alt_boundbox = np.array([[int(410/960*x_res),int(53/544*y_res)],[int(470/960*x_res),int(53/544*y_res)],[int(470/960*x_res),int(82/544*y_res)],[int(410/960*x_res),int(82/544*y_res)]]) 
 alt_width = abs(alt_boundbox[0,0]-alt_boundbox[1,0])
 alt_height = abs(alt_boundbox[0,1]-alt_boundbox[2,1]) #Data for getting the altitude
 
-boundingbox_arr = np.array([lat_boundbox, lon_boundbox, alt_boundbox])
+heading_boundbox = np.array([[int(20/960*x_res),int(410/544*y_res)],[int(110/960*x_res),int(410/544*y_res)],[int(110/960*x_res),int(440/544*y_res)],[int(20/960*x_res),int(440/544*y_res)]]) 
+heading_width = abs(heading_boundbox[0,0]-heading_boundbox[1,0])
+heading_height = abs(heading_boundbox[0,1]-heading_boundbox[2,1]) #Data for getting the altitude
 
-def img_to_number(img_frame, resize, resize_newsize):
+boundingbox_arr = np.array([lat_boundbox, lon_boundbox, alt_boundbox, heading_boundbox])
+
+def img_to_number(img_frame, resize, resize_newsize, atribute_name):
 	number_contour = cv2.findContours(img_frame.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 	number_contour = number_contour[0]
 	good_contour = []
@@ -101,9 +105,9 @@ def img_to_number(img_frame, resize, resize_newsize):
 		endnum = int(endstring)/(10000000)
 	else:
 		endnum = int(endstring) 
-	return endnum
+	return endnum, atribute_name
 
-def videoloop(show_full_frame, videofeed,boundingbox_arr, videofps, capture_frequency,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height):
+def videoloop(show_full_frame, videofeed,boundingbox_arr, videofps, capture_frequency,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height, heading_boundbox, heading_width, heading_height):
 	while(videofeed.isOpened()):
 		i = 0
 		for i in range (int(videofps/capture_frequency)):
@@ -120,10 +124,24 @@ def videoloop(show_full_frame, videofeed,boundingbox_arr, videofps, capture_freq
 		lat_area = tresholdframe[lat_boundbox[0,1]:lat_boundbox[0,1]+lat_height, lat_boundbox[0,0]:lat_boundbox[0,0]+lat_width]
 		lon_area = tresholdframe[lon_boundbox[0,1]:lon_boundbox[0,1]+lon_height, lon_boundbox[0,0]:lon_boundbox[0,0]+lon_width]
 		alt_area = tresholdframe[alt_boundbox[0,1]:alt_boundbox[0,1]+alt_height, alt_boundbox[0,0]:alt_boundbox[0,0]+alt_width]
-		lat = img_to_number(lat_area, resize, resize_newsize)
-		lon = img_to_number(lon_area, resize, resize_newsize)
-		alt = img_to_number(alt_area, resize, resize_newsize)
-		print(lat,lon,alt)
+		heading_area = tresholdframe[heading_boundbox[0,1]:heading_boundbox[0,1]+heading_height, heading_boundbox[0,0]:heading_boundbox[0,0]+heading_width]
+
+		paramlist = [(lat_area, resize, resize_newsize, 'lat'),(lon_area, resize, resize_newsize, 'lon'),(alt_area, resize, resize_newsize, 'alt'),(heading_area, resize, resize_newsize, 'heading')]
+		with concurrent.futures.ThreadPoolExecutor() as executor: #Runs all 4 parameter gathering concurently
+			futures = [executor.submit(img_to_number, *parameters) for parameters in paramlist]
+			results = [future.result() for future in concurrent.futures.as_completed(futures)]
+		i, lat, lon, alt, heading=0,0,0,0,0
+		for i in range(4):
+			if(results[i][1] == 'lat'):
+				lat = float(results[i][0])
+			if(results[i][1] == 'lon'):
+				lon = float(results[i][0])
+			if(results[i][1] == 'alt'):
+				alt = int(results[i][0])
+			if(results[i][1] == 'heading'):
+				heading = int(results[i][0])
+		coords = [lat, lon, heading, alt]
+		print(coords)
 		if(show_full_frame): #Testing the full view
 			cv2.drawContours(tresholdframe, boundingbox_arr, -1 ,(255,255,255), 1)
 			cv2.imshow('frame', tresholdframe)
@@ -132,4 +150,4 @@ def videoloop(show_full_frame, videofeed,boundingbox_arr, videofps, capture_freq
 	videofeed.release()
 	cv2.destroyAllWindows()
 
-videoloop(show_full_frame, videofeed,boundingbox_arr, videofps, capture_frequency,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height)
+videoloop(show_full_frame, videofeed,boundingbox_arr, videofps, capture_frequency,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height, heading_boundbox, heading_width, heading_height)
