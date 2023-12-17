@@ -1,7 +1,4 @@
 import cv2
-import os
-import time
-import pymavlink
 from multiprocessing import Process
 import numpy as np
 
