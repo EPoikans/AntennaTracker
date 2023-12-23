@@ -44,10 +44,12 @@ while True:
             heading = msg['heading']            
         if(msg['mavpackettype'] == 'GLOBAL_POSITION_INT' ):
             temp_gps_data = np.array([int(msg['time_boot_ms']/100), heading, int(msg['hdg']/100), msg['lat']/(10000000), msg['lon']/(10000000),int(msg['relative_alt']/1000), int(fix_type), int(sat_count)])
+            print(temp_gps_data)
+        i+=1
         if((msg['mavpackettype']=='HOME_POSITION') and (homegpsset == False)):
             homegpsdata = temp_gps_data.copy()
             homegpsset = True            
-        i+=1
+        
     except:
         pass
     if(savei == i and usetestfile == True):

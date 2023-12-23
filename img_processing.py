@@ -47,11 +47,11 @@ y_res = videofeed.get(cv2.CAP_PROP_FRAME_HEIGHT)
 # Native 1920x1080, video test 960x544
 # left top corner (x,y), right top corner(x,y), right bottom corner(x,y), left bottom corner(x,y)
 
-lat_boundbox = np.array([[int(730/960*x_res),int(326/544*y_res)],[int(920/960*x_res),int(326/544*y_res)],[int(920/960*x_res),int(354/544*y_res)],[int(730/960*x_res),int(354/544*y_res)]]) 
+lat_boundbox = np.array([[int(730/960*x_res),int(355/544*y_res)],[int(920/960*x_res),int(355/544*y_res)],[int(920/960*x_res),int(380/544*y_res)],[int(730/960*x_res),int(380/544*y_res)]]) 
 lat_width = abs(lat_boundbox[0,0]-lat_boundbox[1,0])
 lat_height = abs(lat_boundbox[0,1]-lat_boundbox[2,1]) #Data for getting the latitude
 
-lon_boundbox = np.array([[int(730/960*x_res),int(355/544*y_res)],[int(920/960*x_res),int(355/544*y_res)],[int(920/960*x_res),int(380/544*y_res)],[int(730/960*x_res),int(380/544*y_res)]]) 
+lon_boundbox = np.array([[int(730/960*x_res),int(326/544*y_res)],[int(920/960*x_res),int(326/544*y_res)],[int(920/960*x_res),int(354/544*y_res)],[int(730/960*x_res),int(354/544*y_res)]]) 
 lon_width = abs(lon_boundbox[0,0]-lon_boundbox[1,0])
 lon_height = abs(lon_boundbox[0,1]-lon_boundbox[2,1]) #Data for getting the longitude
 
