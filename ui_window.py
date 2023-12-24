@@ -1,10 +1,14 @@
+import time
 from tkinter import *
 from tkinter import ttk
 import tkinter as tk
+import numpy as np
+import cv2
 import initialize_data
 import gps_calculation
 import img_processing
-
+from collections.abc import Iterable
+from PIL import Image, ImageTk
 
 
 
@@ -39,7 +43,7 @@ def main():
 	system_checkbox3.grid(row=4, column=1, sticky="w", padx=10, pady=5)
 	init_button = tk.Button(mainwindow, text="Initialize program", command=initialize)
 	init_button.grid(row=5,column=0, pady=5)
-	test_button = tk.Button(mainwindow, text="Show test sample video analysis", command=TestVideo)
+	test_button = tk.Button(mainwindow, text="Show test sample video analysis", command=SampleVideo)
 	test_button.grid(row=5,column=1, pady=5)
 	global error_label
 	error_label = tk.Label(mainwindow, text="")
@@ -87,12 +91,43 @@ def initialize():
 	else:
 		error_label.config(text="Select the method for obtaining home GPS coordinates")
 
-def TestVideo():
+def TestVideo(iter_count):
+	testcoord, img = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, initialize_data.knn, True)
+	if(testcoord!=[False, False, False, False] and isinstance(img, Iterable)):
+		osd_test_coords.config(text=testcoord)
+		img_rgb = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
+		pil_img = Image.fromarray(img_rgb)
+		resized_img = pil_img.resize((200, 120))
+		tkinterimg = ImageTk.PhotoImage(resized_img)
+		osd_test_screenshot.config(image=tkinterimg)
+		osd_test_screenshot.image = tkinterimg
+	else:
+		osd_test_coords.config(text="No frame found")
+		print("test")
+	if(iter_count <= 100):
+		testing_window.after(100,lambda: TestVideo(iter_count + 1))
+	else:
+		osd_test_screenshot.config(image=None)
+		endstring = ('Test done, last coordinates -' + str(testcoord[0]) + " " + str(testcoord[1]) +  " " + str(testcoord[2]) + " " + str(testcoord[3]))
+		osd_test_coords.config(text=endstring)
+	
+	
+def TestVideoLoop():
+	TestVideo(0)
+	
+
+def TestMavlink():
+	print("")
+
+def SampleVideo():
+	print("")
+
+def SampleMavlink():
 	print("")
 
 def OSDHomePos():
 	global coords
-	coords = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, initialize_data.knn)
+	coords = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, initialize_data.knn, False)
 	home_gps_result.config(text=(coords))
 
 def submitOSDHome():
@@ -101,10 +136,40 @@ def submitOSDHome():
 	gps_home_window.destroy()
 	workingWindow()
 
+def testingWindow():
+	global testing_window 
+	testing_window = tk.Toplevel(workWindow)
+	testing_window.title("Functionality testing")
+	testing_window.geometry("800x480")
+	mavlink_test = tk.Button(testing_window, text="Test mavlink incoming messages", command=TestMavlink)
+	mavlink_test.grid(row=1,column=0, pady=5)
+	global osd_test_screenshot
+	global osd_test_coords
+	osd_test = tk.Button(testing_window, text="Test OSD coordinates and processed feed", command=TestVideoLoop)
+	osd_test.grid(row=1,column=1, pady=5)
+	
+	osd_test_screenshot = tk.Label(testing_window)
+	osd_test_screenshot.grid(row=3,column=1, pady=5)
+	
+	osd_test_coords = tk.Label(testing_window)
+	osd_test_coords.grid(row=2,column=1, pady=5)
+	mavlink_sample= tk.Button(testing_window, text="See mavlink sample", command=SampleMavlink)
+	mavlink_sample.grid(row=10,column=0, pady=5)
+	OSD_sample= tk.Button(testing_window, text="See OSD sample", command=SampleVideo)
+	OSD_sample.grid(row=10,column=1, pady=5)
+	Return_btt= tk.Button(testing_window, text="Return", command=ReturnBttFn)
+	Return_btt.grid(row=15,column=0, pady=5)
+
+def ReturnBttFn():
+	testing_window.destroy()
+
 def workingWindow():
+	global workWindow
 	workWindow = tk.Toplevel(mainwindow)
 	workWindow.geometry("800x480")
 	workWindow.title("Tracking")
+	testing_win= tk.Button(workWindow, text="Test OSD coordinates and processed feed", command=testingWindow)
+	testing_win.grid(row=10,column=0, pady=5)
 
 if __name__ == "__main__":
     main()

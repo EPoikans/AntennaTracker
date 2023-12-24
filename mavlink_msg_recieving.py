@@ -22,6 +22,18 @@ def get_gps_mavlink(the_connection):
         except:
             pass
 
+def test_mavlink_connection(the_connection, TKdatafield):
+    i=0
+    while True:
+        try:
+            msg = the_connection.recv_match().to_dict()
+            TKdatafield(text = msg)
+            i+=1
+            if(i>=4):
+                i=0
+        except:
+            pass
+
 def get_gps_logs(the_connection): #Prints all gps related msg from flight log file
     i=0
     savei = 0

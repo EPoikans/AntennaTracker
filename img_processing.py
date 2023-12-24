@@ -44,7 +44,7 @@ def img_to_number(img_frame, resize, resize_newsize, atribute_name, knn):
 		endnum = int(endstring) 
 	return endnum, atribute_name
 
-def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height, heading_boundbox, heading_width, heading_height, resize, resize_newsize, knn):
+def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height, heading_boundbox, heading_width, heading_height, resize, resize_newsize, knn, testosd):
 	try:
 		framestatus, frame = videofeed.read()
 		if not framestatus:
@@ -52,12 +52,14 @@ def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, l
 		grayframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		framestatus2, tresholdframe = cv2.threshold(grayframe,220,255,cv2.THRESH_TOZERO) #Removes background
 		if not framestatus2:
-			raise Exception [False, False, False, False] #On error returns all coords values as false 
+			raise Exception [False, False, False, False] #On error returns all coords values as false
+		returnimg = tresholdframe.copy()
 		lat_area = tresholdframe[lat_boundbox[0,1]:lat_boundbox[0,1]+lat_height, lat_boundbox[0,0]:lat_boundbox[0,0]+lat_width]
 		lon_area = tresholdframe[lon_boundbox[0,1]:lon_boundbox[0,1]+lon_height, lon_boundbox[0,0]:lon_boundbox[0,0]+lon_width]
 		alt_area = tresholdframe[alt_boundbox[0,1]:alt_boundbox[0,1]+alt_height, alt_boundbox[0,0]:alt_boundbox[0,0]+alt_width]
 		heading_area = tresholdframe[heading_boundbox[0,1]:heading_boundbox[0,1]+heading_height, heading_boundbox[0,0]:heading_boundbox[0,0]+heading_width]
 		paramlist = [(lat_area, resize, resize_newsize, 'lat', knn),(lon_area, resize, resize_newsize, 'lon', knn),(alt_area, resize, resize_newsize, 'alt', knn),(heading_area, resize, resize_newsize, 'heading', knn)]
+		
 		with concurrent.futures.ThreadPoolExecutor() as executor: #Runs all 4 parameter gathering concurently
 			futures = [executor.submit(img_to_number, *parameters) for parameters in paramlist]
 			results = [future.result() for future in concurrent.futures.as_completed(futures)]
@@ -72,7 +74,10 @@ def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, l
 			if(results[i][1] == 'heading'):
 				heading = int(results[i][0])
 		coords = [lat, lon, heading, alt]
-		return coords
+		if(testosd):
+			return coords, returnimg
+		else:
+			return coords
 	except:
 		return [False, False, False, False]
 

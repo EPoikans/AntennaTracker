@@ -52,30 +52,46 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		global lat_boundbox
 		global lat_width
 		global lat_height
-		lat_boundbox = np.array([[int(730/960*x_res),int(355/544*y_res)],[int(920/960*x_res),int(355/544*y_res)],[int(920/960*x_res),int(380/544*y_res)],[int(730/960*x_res),int(380/544*y_res)]]) 
-		lat_width = abs(lat_boundbox[0,0]-lat_boundbox[1,0])
-		lat_height = abs(lat_boundbox[0,1]-lat_boundbox[2,1]) #Data for getting the latitude
+		lat_boundbox = np.array([
+				[int(730/960*x_res),int(355/544*y_res)],
+				[int(920/960*x_res),int(355/544*y_res)],
+				[int(920/960*x_res),int(380/544*y_res)],
+				[int(730/960*x_res),int(380/544*y_res)]
+			])
+		lat_width, lat_height =  get_wh(lat_boundbox)
 
 		global lon_boundbox
 		global lon_width
 		global lon_height
-		lon_boundbox = np.array([[int(730/960*x_res),int(326/544*y_res)],[int(920/960*x_res),int(326/544*y_res)],[int(920/960*x_res),int(354/544*y_res)],[int(730/960*x_res),int(354/544*y_res)]]) 
-		lon_width = abs(lon_boundbox[0,0]-lon_boundbox[1,0])
-		lon_height = abs(lon_boundbox[0,1]-lon_boundbox[2,1]) #Data for getting the longitude
+		lon_boundbox = np.array([
+				[int(730/960*x_res),int(326/544*y_res)],
+				[int(920/960*x_res),int(326/544*y_res)],
+				[int(920/960*x_res),int(354/544*y_res)],
+				[int(730/960*x_res),int(354/544*y_res)]
+			])
+		lon_width, lon_height =  get_wh(lon_boundbox) 
 
 		global alt_boundbox
 		global alt_width
 		global alt_height
-		alt_boundbox = np.array([[int(410/960*x_res),int(53/544*y_res)],[int(470/960*x_res),int(53/544*y_res)],[int(470/960*x_res),int(82/544*y_res)],[int(410/960*x_res),int(82/544*y_res)]]) 
-		alt_width = abs(alt_boundbox[0,0]-alt_boundbox[1,0])
-		alt_height = abs(alt_boundbox[0,1]-alt_boundbox[2,1]) #Data for getting the altitude
+		alt_boundbox = np.array([
+				[int(410/960*x_res),int(53/544*y_res)],
+				[int(470/960*x_res),int(53/544*y_res)],
+				[int(470/960*x_res),int(82/544*y_res)],
+				[int(410/960*x_res),int(82/544*y_res)]
+			])
+		alt_width, alt_height =  get_wh(alt_boundbox) 
 
 		global heading_boundbox
 		global heading_width
 		global heading_height
-		heading_boundbox = np.array([[int(20/960*x_res),int(410/544*y_res)],[int(110/960*x_res),int(410/544*y_res)],[int(110/960*x_res),int(440/544*y_res)],[int(20/960*x_res),int(440/544*y_res)]]) 
-		heading_width = abs(heading_boundbox[0,0]-heading_boundbox[1,0])
-		heading_height = abs(heading_boundbox[0,1]-heading_boundbox[2,1]) #Data for getting the altitude
+		heading_boundbox = np.array([
+				[int(20/960*x_res),int(410/544*y_res)],
+				[int(110/960*x_res),int(410/544*y_res)],
+				[int(110/960*x_res),int(440/544*y_res)],
+				[int(20/960*x_res),int(440/544*y_res)]
+			])
+		heading_width, heading_height =  get_wh(heading_boundbox) 
 
 		global boundingbox_arr
 		boundingbox_arr = np.array([lat_boundbox, lon_boundbox, alt_boundbox, heading_boundbox])
@@ -119,3 +135,7 @@ def knn_accuracy_test(knn,train_array,trainedlabels): #Checks that the NN can re
         print('Accurracy not 100%')
     return accuracy
 
+def get_wh(boundbox_arr):
+	width = abs(boundbox_arr[0,0]-boundbox_arr[1,0])
+	height = abs(boundbox_arr[0,1]-boundbox_arr[2,1])
+	return width,height
