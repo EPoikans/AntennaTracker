@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from pymavlink import mavutil
 
+
 global gpshome
 gpshome = []
 
@@ -29,11 +30,10 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		#	Video feed input data collection
 		#
 		initial = True
-		usesamplevid = True #Used in testing a video recording
+		usesamplevid = True #Used in testing a video recording without flying drone, should be false when field testing
 		global videofeed
 		if(usesamplevid):
 			videofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
-			show_full_frame = False #If true, shows a window with the OSD and treshold processed background and bounding boxes drawn
 			videofps = videofeed.get(cv2.CAP_PROP_FPS)
 			capture_frequency = 1 # analyzed frames per second, 1 recomened
 		else:
@@ -99,7 +99,7 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 	if(useMavlink):
 		connect_adress = '/dev/ttyUSB0'
 		testfile = './TestingFiles/2023-09-22 12-26-58.tlog'
-		usetestfile = True
+		usetestfile = True #Used for testing without connection to drone using logs like in sample viewing, should be False for actual flights
 		if(usetestfile):
 			usedaddress = testfile
 		else:

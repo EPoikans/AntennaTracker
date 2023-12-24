@@ -9,7 +9,7 @@ import img_processing
 import mavlink_msg_recieving
 from collections.abc import Iterable
 from PIL import Image, ImageTk
-
+from pymavlink import mavutil
 
 
 def main():
@@ -160,10 +160,29 @@ def TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i,it
 		mavlink_test1.config(text = "Not using Mavlink for GPS")
 
 def SampleVideo():
-	print("")
+	global samplevideowindow
+	initialize_data.initialize_data(False, True, '', False, False) 
+	samplevideowindow = tk.Toplevel(mainwindow)
+	samplevideowindow.geometry("800x480")
+	samplevideowindow.title("Sample video")
+	samplevideofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
+	videofps = samplevideofeed.get(cv2.CAP_PROP_FPS)
+	capture_frequency = 1 # analyzed frames per second, 1 recomened
+	global sample_videofeed, sample_videofeed_coords
+	sample_videofeed = tk.Label(samplevideowindow)
+	sample_videofeed.grid(row=2,columnspan=2, column=0)
+	sample_videofeed_coords = tk.Label(samplevideowindow)
+	sample_videofeed_coords.grid(row=1,column=0)
+	Return_btt= tk.Button(samplevideowindow, text="Return", command=lambda: ReturnBttFn(samplevideowindow))
+	Return_btt.grid_forget()
+	img_processing.testvideo(samplevideofeed, initialize_data.boundingbox_arr, videofps, capture_frequency,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, initialize_data.knn, sample_videofeed_coords, sample_videofeed, samplevideowindow )
+	Return_btt.grid(row=1,column=1)
 
 def SampleMavlink():
-	print("")
+	global sampleMavlinkWindow
+	the_connection = mavutil.mavlink_connection('./TestingFiles/2023-09-22 12-26-58.tlog')
+	the_connection.wait_heartbeat()
+	mavlink_msg_recieving.get_gps_logs(the_connection)
 
 def OSDHomePos():
 	global coords

@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
+import ui_window
 import concurrent.futures
+from PIL import Image, ImageTk
 
 def img_to_number(img_frame, resize, resize_newsize, atribute_name, knn):
 	number_contour = cv2.findContours(img_frame.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -81,19 +83,20 @@ def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, l
 	except:
 		return [False, False, False, False]
 
-def testvideo(videofeed, boundingbox_arr, videofps, capture_frequency,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height, heading_boundbox, heading_width, heading_height, resize, resize_newsize, knn ):
+def testvideo(videofeed, boundingbox_arr, videofps, capture_frequency,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height, heading_boundbox, heading_width, heading_height, resize, resize_newsize, knn, sample_videofeed_coords, sample_videofeed, samplevideowindow ):
 	while(videofeed.isOpened()):
+		samplevideowindow.update_idletasks()
 		i = 0
 		for i in range (int(videofps/capture_frequency)):
 			framestatus, frame = videofeed.read()
 	
 		if not framestatus:
-			print('No more frames, stopping')
+			sample_videofeed_coords.config(text=('No more frames, stopping'))
 			break
 		grayframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		framestatus2, tresholdframe = cv2.threshold(grayframe,220,255,cv2.THRESH_TOZERO) #Removes background
 		if not framestatus2:
-			print('No more frames, stopping')
+			sample_videofeed_coords.config(text=('No more frames, stopping'))
 			break
 		lat_area = tresholdframe[lat_boundbox[0,1]:lat_boundbox[0,1]+lat_height, lat_boundbox[0,0]:lat_boundbox[0,0]+lat_width]
 		lon_area = tresholdframe[lon_boundbox[0,1]:lon_boundbox[0,1]+lon_height, lon_boundbox[0,0]:lon_boundbox[0,0]+lon_width]
@@ -115,12 +118,22 @@ def testvideo(videofeed, boundingbox_arr, videofps, capture_frequency,lat_boundb
 			if(results[i][1] == 'heading'):
 				heading = int(results[i][0])
 		coords = [lat, lon, heading, alt]
-		print(coords)
 		cv2.drawContours(tresholdframe, boundingbox_arr, -1 ,(255,255,255), 1)
-		cv2.imshow('frame', tresholdframe)
+		updateSampleVid(sample_videofeed_coords, sample_videofeed, tresholdframe.copy(), coords, samplevideowindow)
+		
 		if cv2.waitKey(1000) == ord('q'):
 			break
 	videofeed.release()
 	cv2.destroyAllWindows()
 
+def updateSampleVid(sample_videofeed_coords, sample_videofeed, frame, coords,samplevideowindow):
+	sample_videofeed_coords.config(text=str(coords))
+	img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+	pil_img = Image.fromarray(img_rgb)
+	resized_img = pil_img.resize((700, 420))
+	tkinterimg = ImageTk.PhotoImage(resized_img)
+	sample_videofeed.config(image=tkinterimg)
+	sample_videofeed.image=tkinterimg
+	samplevideowindow.update_idletasks()
+	return
 #videoloop(show_full_frame, videofeed,boundingbox_arr, videofps, capture_frequency,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height, heading_boundbox, heading_width, heading_height)
