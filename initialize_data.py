@@ -104,6 +104,7 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 			usedaddress = testfile
 		else:
 			usedaddress = connect_adress
+		global the_connection
 		the_connection = mavutil.mavlink_connection(usedaddress)
 		the_connection.wait_heartbeat()
 

@@ -1,5 +1,7 @@
 from pymavlink import mavutil
 import numpy as np
+import tkinter as tk
+import ui_window
 
 def get_gps_mavlink(the_connection):
     vfr = False
@@ -22,17 +24,17 @@ def get_gps_mavlink(the_connection):
         except:
             pass
 
-def test_mavlink_connection(the_connection, TKdatafield):
+def test_mavlink_connection(the_connection):
     i=0
     while True:
         try:
             msg = the_connection.recv_match().to_dict()
-            TKdatafield(text = msg)
-            i+=1
-            if(i>=4):
-                i=0
+            return msg
         except:
+            i+=1
             pass
+        if(i==1000):
+            return "No messages"
 
 def get_gps_logs(the_connection): #Prints all gps related msg from flight log file
     i=0
