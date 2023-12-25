@@ -180,9 +180,26 @@ def SampleVideo():
 
 def SampleMavlink():
 	global sampleMavlinkWindow
-	the_connection = mavutil.mavlink_connection('./TestingFiles/2023-09-22 12-26-58.tlog')
-	the_connection.wait_heartbeat()
-	mavlink_msg_recieving.get_gps_logs(the_connection)
+	sampleMavlinkWindow = tk.Toplevel(mainwindow)
+	sampleMavlinkWindow.geometry("800x480")
+	sampleMavlinkWindow.title("Sample mavlink")
+	the_connection_sample = mavutil.mavlink_connection('./TestingFiles/2023-09-22 12-26-58.tlog')
+	the_connection_sample.wait_heartbeat()
+	global mavlink_sample1, mavlink_sample2, mavlink_sample3, mavlink_sample4
+	mavlink_sampletitle = tk.Label(sampleMavlinkWindow, text="1. time from boot 2. compass heading val 3. GPS heading val 4. GPS lat, 5. GPS lon 6. GPS relative altitude 7. GPS fix type 8. locked sattelite count")
+	mavlink_sample1 = tk.Label(sampleMavlinkWindow, wraplength=780)
+	mavlink_sample2 = tk.Label(sampleMavlinkWindow, wraplength=780)
+	mavlink_sample3 = tk.Label(sampleMavlinkWindow, wraplength=780)
+	mavlink_sample4 = tk.Label(sampleMavlinkWindow, wraplength=780)
+	mavlink_sampletitle.grid(row=0,column=0, columnspan=2, pady=5)
+	mavlink_sample1.grid(row=2,column=0, columnspan=2, pady=5)
+	mavlink_sample2.grid(row=3,column=0, columnspan=2, pady=5)
+	mavlink_sample3.grid(row=4,column=0, columnspan=2, pady=5)
+	mavlink_sample4.grid(row=5,column=0, columnspan=2, pady=5)
+	Return_btt= tk.Button(sampleMavlinkWindow, text="Return", command=lambda: ReturnBttFn(sampleMavlinkWindow))
+	Return_btt.grid_forget()
+	mavlink_msg_recieving.get_gps_logs(the_connection_sample,mavlink_sample1,mavlink_sample2,mavlink_sample3,mavlink_sample4, sampleMavlinkWindow)
+	Return_btt.grid(row=1,column=1)
 
 def OSDHomePos():
 	global coords
@@ -207,7 +224,7 @@ def testingWindow():
 	mavlink_test2 = tk.Label(testing_window)
 	mavlink_test3 = tk.Label(testing_window)
 	mavlink_test4 = tk.Label(testing_window)
-	mavlink_test.grid(row=1,column=0, pady=5)
+	mavlink_test.grid(row=1,column=0, pady=5,)
 	mavlink_test1.grid(row=2,column=0, pady=5)
 	mavlink_test2.grid(row=3,column=0, pady=5)
 	mavlink_test3.grid(row=4,column=0, pady=5)

@@ -36,9 +36,11 @@ def test_mavlink_connection(the_connection):
         if(i==1000):
             return "No messages"
 
-def get_gps_logs(the_connection): #Prints all gps related msg from flight log file
+def get_gps_logs(the_connection,mavlink_sample1,mavlink_sample2,mavlink_sample3,mavlink_sample4, sampleMavlinkWindow): #Prints all gps related msg from flight log file
     i=0
     savei = 0
+    j=0
+    sampleMavlinkWindow.update_idletasks()
     while True:
         savei = i
         try:
@@ -52,10 +54,53 @@ def get_gps_logs(the_connection): #Prints all gps related msg from flight log fi
                 heading = msg['heading']            
             if(msg['mavpackettype'] == 'GLOBAL_POSITION_INT' ):
                 temp_gps_data = np.array([int(msg['time_boot_ms']/100), heading, int(msg['hdg']/100), msg['lat']/(10000000), msg['lon']/(10000000),int(msg['relative_alt']/1000), int(fix_type), int(sat_count)])
-                print(temp_gps_data)
+                if(j==0):
+                    mavlink_sample1.config(text="")
+                    sampleMavlinkWindow.update_idletasks()
+                    copyarray = temp_gps_data.copy()
+                    mavlink_sample1.config(text=("Alivetime - " + str(int(copyarray[0])) + " Compass HDG - " + str(int(copyarray[1])) + " GPS HDG - " +str(int(copyarray[2])) +" Lat - " + str(copyarray[3]) + " Lon - " +str(copyarray[4]) +" Rel Alt - " + str(int(copyarray[5])) +" Fix type - " + str(int(copyarray[6])) +" Sat - " + str(int(copyarray[7]))))
+                    sampleMavlinkWindow.update_idletasks()
+                    sampleMavlinkWindow.after(15)
+                if(j==1):
+                    mavlink_sample2.config(text="")
+                    sampleMavlinkWindow.update_idletasks()
+                    copyarray = temp_gps_data.copy()
+                    mavlink_sample2.config(text=("Alivetime - " + str(int(copyarray[0])) + " Compass HDG - " + str(int(copyarray[1])) + " GPS HDG - " +str(int(copyarray[2])) +" Lat - " + str(copyarray[3]) + " Lon - " +str(copyarray[4]) +" Rel Alt - " + str(int(copyarray[5])) +" Fix type - " + str(int(copyarray[6])) +" Sat - " + str(int(copyarray[7]))))
+                    sampleMavlinkWindow.update_idletasks()
+                    sampleMavlinkWindow.after(15)
+
+                if(j==2):
+                    mavlink_sample3.config(text="")
+                    sampleMavlinkWindow.update_idletasks()
+                    copyarray = temp_gps_data.copy()
+                    mavlink_sample3.config(text=("Alivetime - " + str(int(copyarray[0])) + " Compass HDG - " + str(int(copyarray[1])) + " GPS HDG - " +str(int(copyarray[2])) +" Lat - " + str(copyarray[3]) + " Lon - " +str(copyarray[4]) +" Rel Alt - " + str(int(copyarray[5])) +" Fix type - " + str(int(copyarray[6])) +" Sat - " + str(int(copyarray[7]))))
+                    sampleMavlinkWindow.update_idletasks()
+                    sampleMavlinkWindow.after(15)
+
+                if(j==3):
+                    mavlink_sample4.config(text="")
+                    sampleMavlinkWindow.update_idletasks()
+                    copyarray = temp_gps_data.copy()
+                    mavlink_sample4.config(text=("Alivetime - " + str(int(copyarray[0])) + " Compass HDG - " + str(int(copyarray[1])) + " GPS HDG - " +str(int(copyarray[2])) +" Lat - " + str(copyarray[3]) + " Lon - " +str(copyarray[4]) +" Rel Alt - " + str(int(copyarray[5])) +" Fix type - " + str(int(copyarray[6])) +" Sat - " + str(int(copyarray[7]))))
+                    sampleMavlinkWindow.update_idletasks()
+                    sampleMavlinkWindow.after(15)
+                    
+                j+=1
+                if(j>=4):
+                    sampleMavlinkWindow.update_idletasks()
+                    sampleMavlinkWindow.after(15)
+                    j=0
+                
+                
+                if((msg['time_boot_ms']/100)>=3000):
+                    savei = i
         except:
             pass
         if(savei == i):
+            mavlink_sample1.config(text="End of sample")
+            mavlink_sample2.config(text="End of sample")
+            mavlink_sample3.config(text="End of sample")
+            mavlink_sample4.config(text="End of sample")
             break
 
 def await_home_coords(the_connection): #Usable if no GPS & compass unit on ground station, uses the drone arming location and heading as home gps and home heading
