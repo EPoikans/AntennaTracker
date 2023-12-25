@@ -1,3 +1,5 @@
+import threading
+import time
 from tkinter import *
 from tkinter import ttk
 import tkinter as tk
@@ -10,6 +12,7 @@ import mavlink_msg_recieving
 from collections.abc import Iterable
 from PIL import Image, ImageTk
 from pymavlink import mavutil
+import servo_change
 
 
 def main():
@@ -62,19 +65,40 @@ def initialize():
 	global mavlink_for_gps
 	mavlink_for_gps = system_checkbox_var2.get()
 	accelerometer = system_checkbox_var3.get()
+	global gps_home_window
 	if(home_gps_select):
 		if(osd_for_gps or mavlink_for_gps):
 			if(home_gps_select == 1):
 				if(mavlink_for_gps):
 					error_label.config(text="")
 					initialize_data.initialize_data(bool(mavlink_for_gps), bool(osd_for_gps), 'mavlink', False, accelerometer)
+					gps_home_window = tk.Toplevel(mainwindow)
+					gps_home_window.geometry("800x480")
+					gps_home_window.title("Await home coordinates")
+					home_label = tk.Label(gps_home_window, text="Arm drone to set home. Awaiting mavlink home set message")
+					home_label.grid(row=0,column=0, pady=5)
+					global home_gps_result_mav
+					home_gps_result_mav = tk.Label(gps_home_window, text="No GPS data retrieved")
+					home_gps_result_mav.grid(row=2,column=0, pady=5)
+					home_gps_confirm = tk.Button(gps_home_window, text="Confirm", command=submitOSDHome)
+					home_gps_confirm.grid(row=3,column=0, pady=5)
+					Return_btt= tk.Button(gps_home_window, text="Return", command=lambda: ReturnBttFn(gps_home_window))
+					Return_btt.grid_forget()
+					global coords
+					gps_home_window.update_idletasks()
+					mavcoords = mavlink_msg_recieving.await_home_coords(initialize_data.the_connection)
+					coords = [mavcoords[3],mavcoords[4],int(mavcoords[5]), int(mavcoords[2])]
+					if(coords!="Timeout"):
+						home_gps_result_mav.config(text=coords)
+					else:
+						home_gps_result_mav.config(text="Home set message not recieved in time, return and try again")
+					Return_btt.grid(row=20,column=0, pady=5)
 				else:
 					error_label.config(text="Mavlink for GPS position is needed to obtain home coordinates via Mavlink")
 			if(home_gps_select == 2):
 				if(osd_for_gps):
 					error_label.config(text="")
 					initialize_data.initialize_data(bool(mavlink_for_gps), bool(osd_for_gps), 'OSD', False, accelerometer)
-					global gps_home_window
 					gps_home_window = tk.Toplevel(mainwindow)
 					gps_home_window.geometry("800x480")
 					gps_home_window.title("Set home coordinates")
@@ -121,13 +145,13 @@ def TestVideo(iter_count):
 	
 	
 def TestVideoLoop():
-	if(mavlink_for_gps):
+	if(osd_for_gps):
 		TestVideo(0)
 	else:
 		osd_test_coords.config(text="Not using OSD for GPS")
 
 def TestMavlinkLoop():
-	if(osd_for_gps):
+	if(mavlink_for_gps):
 		TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, 0,0)
 	else:
 		mavlink_test1.config(text = "Not using Mavlink for GPS")
@@ -141,21 +165,26 @@ def TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i,it
 			mavlink_test4.config(text = "End of test")
 			return
 		msg = mavlink_msg_recieving.test_mavlink_connection(initialize_data.the_connection)
-		print(msg["mavpackettype"])
-		if(i==0):
-			mavlink_test1.config(text = str(msg["mavpackettype"]))
-			testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1,iter+1))
-		if(i==1):
-			mavlink_test2.config(text = str(msg["mavpackettype"]))
-			testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1,iter+1))
-		if(i==2):
-			mavlink_test3.config(text = str(msg["mavpackettype"]))
-			testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1 ,iter+1))
-		if(i==3):
-			mavlink_test4.config(text = str(msg["mavpackettype"]))
-			testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1,iter+1))
-		if(i>=4):
-			testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, 0,iter+1))
+		if(msg):
+			if(i==0):
+				mavlink_test1.config(text = str(msg["mavpackettype"]))
+				testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1,iter+1))
+			if(i==1):
+				mavlink_test2.config(text = str(msg["mavpackettype"]))
+				testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1,iter+1))
+			if(i==2):
+				mavlink_test3.config(text = str(msg["mavpackettype"]))
+				testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1 ,iter+1))
+			if(i==3):
+				mavlink_test4.config(text = str(msg["mavpackettype"]))
+				testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1,iter+1))
+			if(i>=4):
+				testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, 0,iter+1))
+		else:
+			mavlink_test1.config(text = "No incoming messages")
+			mavlink_test2.config(text = "No incoming messages")
+			mavlink_test3.config(text = "No incoming messages")
+			mavlink_test4.config(text = "No incoming messages")
 	else:
 		mavlink_test1.config(text = "Not using Mavlink for GPS")
 
@@ -246,15 +275,125 @@ def testingWindow():
 def ReturnBttFn(window):
 	window.destroy()
 
+def StartTracking():
+	global loop_running
+	loop_running = True
+	threading.Thread(target=TrackingLoop).start()
+
+def StopTracking():
+	global loop_running
+	loop_running = False
+
+def TrackingLoop():
+	global loop_running
+	global osd_for_gps, mavlink_for_gps, gpshome, home_coords
+	osd_lat_sanity = gpshome[0]
+	osd_lon_sanity = gpshome[1]
+	mav_lat_sanity = gpshome[0]
+	mav_lon_sanity = gpshome[1]
+	sanitycount, osd_sanitycount, mav_sanitycount, lastalt_osd, lastalt_mav = 0, 0, 0, 0, 0
+	heading = gpshome[3]
+	angle = 0
+	if(len(gpshome) == 4):
+		while loop_running:
+			if(osd_for_gps):
+				drone_coords_osd = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, False, False, initialize_data.knn, False)
+				if(drone_coords_osd != [False, False, False, False]):
+					lat_diff = abs(osd_lat_sanity - drone_coords_osd[0])
+					lon_diff = abs(osd_lon_sanity - drone_coords_osd[1])
+					lastalt_osd = drone_coords_osd[2]
+					if(lat_diff <= 0.009 and lon_diff <= 0.009): #About 500m distance change from last coordinate
+						osd_lat_sanity = drone_coords_osd[0]
+						osd_lon_sanity = drone_coords_osd[1]
+					else:
+						sanitycount+=1
+				else:
+					osd_sanitycount+=1
+			if(mavlink_for_gps):
+				drone_coords_mav = mavlink_msg_recieving.get_gps_mavlink(initialize_data.the_connection)
+				if(isinstance(drone_coords_mav, np.ndarray)):
+					lat_diff = abs(mav_lat_sanity - drone_coords_mav[3])
+					lon_diff = abs(mav_lon_sanity - drone_coords_mav[4])
+					lastalt_mav = drone_coords_mav[5]
+					if(lat_diff <= 0.01 and lon_diff <= 0.01): #About 1-1.5km distance change from last coordinate
+						mav_lat_sanity = drone_coords_mav[3]
+						mav_lon_sanity = drone_coords_mav[4]
+					else:
+						sanitycount+=1
+				else:
+					mav_sanitycount+=1
+			if(osd_for_gps and mavlink_for_gps):
+				if(isinstance(drone_coords_mav, np.ndarray) and drone_coords_osd != [False, False, False, False]):
+					drone_coords = [((osd_lat_sanity + mav_lat_sanity)/2),((osd_lon_sanity + mav_lon_sanity)/2), ((lastalt_osd + lastalt_mav)/2)]
+				elif(isinstance(drone_coords_mav, bool) and drone_coords_osd != [False, False, False, False]):
+					drone_coords = [(osd_lat_sanity),(osd_lon_sanity),(lastalt_osd)]
+				elif(isinstance(drone_coords_mav, np.ndarray) and drone_coords_osd == [False, False, False, False]):
+					drone_coords = [(mav_lat_sanity),(mav_lon_sanity),(lastalt_mav)]
+				else:
+					drone_coords = dronecoords_save
+				dronecoords_save = drone_coords
+			elif(osd_for_gps and not mavlink_for_gps):
+				drone_coords = [(osd_lat_sanity),(osd_lon_sanity),(lastalt_osd)]
+				dronecoords_save = drone_coords
+			elif(mavlink_for_gps and not osd_for_gps):
+				drone_coords = [(mav_lat_sanity),(mav_lon_sanity),(lastalt_mav)]
+				dronecoords_save = drone_coords
+			else:
+				drone_coords = dronecoords_save
+			dronecoords_save[0] = int(dronecoords_save[0]*1000000000)/1000000000
+			dronecoords_save[1] = int(dronecoords_save[1]*1000000000)/1000000000
+			dronecoords_save[2] = int(dronecoords_save[2])
+			direct_distance, newheading_from_home, new_angle = gps_calculation.calc_gps_distance(gpshome[0], gpshome[1], dronecoords_save[0], dronecoords_save[1], heading, angle, dronecoords_save[2])
+			distancefromhome.config(text="Distance from home - " + str(int(direct_distance)) + " New heading - "+ str(int(newheading_from_home)) + " New angle - " + str(int(new_angle)))
+			dronecoord.config(text="Drone coordinates - " + str(dronecoords_save))
+			workWindow.after(50)
+			heading = servo_change.headingchangeFn(heading, newheading_from_home, initialize_data.accelerometer_bool)
+			angle = servo_change.anglechangeFn(angle, new_angle, initialize_data.accelerometer_bool)
+			if(sanitycount >=10 or ((osd_sanitycount >=10 or not osd_for_gps) and (mav_sanitycount >= 10 or not mavlink_for_gps))):
+				loop_running = False
+				FailsafeTracking(dronecoords_save=gpshome)
+			time.sleep(0.1)
+			
+	else:
+		home_coords.config(text=("Home coordinates - Invalid"))
+		loop_running = False
+
+def FailsafeTracking(lastcoords):
+	print("")
+
+def ManualControl():
+	print("")
+
 def workingWindow():
 	global workWindow
 	workWindow = tk.Toplevel(mainwindow)
 	workWindow.geometry("800x480")
 	workWindow.title("Tracking")
-	testing_win= tk.Button(workWindow, text="Test OSD coordinates and processed feed", command=testingWindow)
-	testing_win.grid(row=10,column=0, pady=5)
+	testing_win= tk.Button(workWindow, text="Test OSD coordinates and Mavlink processed feed", command=testingWindow)
+	testing_win.grid(row=10,column=0, pady=50)
+	global home_coords, distancefromhome,dronecoord 
+	home_coords = tk.Label(workWindow)
+	if(gpshome):
+		home_coords.config(text=("Home coordinates(Lat, Lon, Alt, Heading) - " + str(gpshome)))
+	else:
+		home_coords.config(text=("Home coordinates - Null"))
+	home_coords.grid(row=2,column=0, columnspan=3, pady=5)
+	distancefromhome = tk.Label(workWindow)
+	distancefromhome.grid(row=3,column=3, pady=5)
+	dronecoord = tk.Label(workWindow)
+	dronecoord.grid(row=4,column=3, pady=5)
+	Start_btt= tk.Button(workWindow, text="Start antenna tracking", command=StartTracking)
+	Start_btt.grid(row=8,column=0, pady=5)
+	Stop_btt= tk.Button(workWindow, text="Stop antenna tracking", command=StopTracking)
+	Stop_btt.grid(row=8,column=1, pady=5)
+	Failsafe_Label = tk.Label(workWindow, text="Attempt to rotate antenna in the last valid coordinate direction")
+	Failsafe_Label.grid(row=7,column=2, columnspan= 2, pady=5)
+	Failsafe_btt= tk.Button(workWindow, text="Failsafe", command=FailsafeTracking)
+	Failsafe_btt.grid(row=8,column=2, pady=5)
+	Manual_btt= tk.Button(workWindow, text="Manual control", command=ManualControl)
+	Manual_btt.grid(row=8,column=3, pady=5)
 	Return_btt= tk.Button(workWindow, text="Return", command=lambda: ReturnBttFn(workWindow))
-	Return_btt.grid(row=15,column=0, pady=5)
+	Return_btt.grid(row=15,column=0, pady=50)
 
 if __name__ == "__main__":
     main()

@@ -7,6 +7,7 @@ global gpshome
 gpshome = []
 
 def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, accelerometer):
+	global accelerometer_bool
 	accelerometer_bool = bool(accelerometer) 
 	if(useOSD):
 		with np.load('knn_data.npz') as data: #Loads training dataset from images
