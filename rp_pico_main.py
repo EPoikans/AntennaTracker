@@ -7,37 +7,37 @@ from machine import Pin, SPI, PWM
 import sys
 from time import sleep
 import select
+import utime
+import ustruct
 
-def initialize_pico():
-    # Registers
-    REG_DEVID = 0x00
-    DEVID = 0xE5
-    REG_POWER_CTL = 0x2D
-    REG_DATAX0 = 0x32
-    REG_DATAY0 = 0x34
-    REG_DATAZ0 = 0x36
-    SENSITIVITY_2G = 1.0 / 25
-    EARTH_GRAVITY = 9.80665
+adxl_constants = {
+    'REG_DEVID': 0x00,
+    'DEVID': 0xE5,
+    'REG_POWER_CTL': 0x2D,
+    'REG_DATAX0': 0x32,
+    'REG_DATAY0': 0x34,
+    'REG_DATAZ0': 0x36,
+    'LSB_resolution': 3.9 / 1023, #3.9 mg/LSB adxl345 
+    'GRAVITY': 9.80665,
+}
+
+def initialize_pico(accelerometer = False):  
     global state, vertservo, horizonservo
+    global spi, cs
     # Initialize SPI
-    spi = SPI(0, baudrate=500000, polarity=0, phase=1, bits=8, firstbit=SPI.MSB, sck=Pin(18), mosi=Pin(19), miso=Pin(16))
-    cs = Pin(17, mode=Pin.OUT, value=1)
-    #reg_read(spi, cs, REG_DEVID)
-    #data = reg_read(spi, cs, REG_DEVID)
-    #print(DEVID)
-    #if (data != bytearray((DEVID,))):
-     #   print("ERROR: Could not communicate with ADXL345")
-     #   sys.exit()
-    #data = reg_read(spi,cs, REG_POWER_CTL)
-    #print(data)
-    #data = int.from_bytes(data, "big") or (1 << 3)
-    #reg_write(spi, cs, REG_POWER_CTL, data)
-    #data = reg_read(spi, cs, REG_POWER_CTL)
-    #print(data)
-    #data = reg_read(spi, cs, REG_DATAX0, 6)
-    #print(data)
-    #print(data)
-
+    spi = SPI(0,baudrate=500000,polarity=1,phase=1,bits=8,firstbit=SPI.MSB,sck=Pin(2),mosi=Pin(3),miso=Pin(0))
+    cs = Pin(1, mode=Pin.OUT, value=1)
+    if(accelerometer):
+        reg_read(spi, cs, adxl_constants['REG_DEVID'])
+        data = reg_read(spi, cs, adxl_constants['REG_DEVID'])
+        if (data != bytearray((adxl_constants['DEVID'],))):
+            print("ERROR: Could not communicate with ADXL345")
+            sys.exit()
+        data = reg_read(spi,cs, adxl_constants['REG_POWER_CTL'])
+        data = int.from_bytes(data, "big") or (1 << 3)
+        reg_write(spi, cs, adxl_constants['REG_POWER_CTL'], data)
+        data = reg_read(spi, cs, adxl_constants['REG_POWER_CTL'])
+        data = reg_read(spi, cs, adxl_constants['REG_DATAX0'], 6)
     vertservo = PWM(Pin(5))
     horizonservo = PWM(Pin(6))
     vertservo.freq(50)
@@ -64,11 +64,10 @@ def reg_read(spi, cs, reg, nbytes=1):
     else:
         mb = 1
     msg = bytearray()
-    msg.append(0x80 or (mb << 6) or reg)
+    msg.append(0x80 | (mb << 6) | reg)
     cs.value(0)
     spi.write(msg)
     data = spi.read(nbytes)
-    print(int.from_bytes(data, 'big'))
     cs.value(1)
     return data
 
@@ -97,7 +96,30 @@ def exec_cmd(command):
     elif fnname == "initialize_pico":
         state, vertservo, horizonservo = initialize_pico()
         if(state):
-            return("Initialized")  
+            return("Initialized")
+    elif fnname == "getADXL":
+        return getADXL()
+        
+
+def getADXL():
+    global spi, cs
+    dataX = reg_read(spi, cs, adxl_constants['REG_DATAX0'], 2)
+    dataY = reg_read(spi, cs, adxl_constants['REG_DATAY0'], 2)
+    dataZ = reg_read(spi, cs, adxl_constants['REG_DATAZ0'], 2)
+    
+    accel_x = ustruct.unpack_from("<h", dataX, 0)[0]
+    accel_y = ustruct.unpack_from("<h", dataY, 0)[0]
+    accel_z = ustruct.unpack_from("<h", dataZ, 0)[0]
+
+    accel_x = accel_x * adxl_constants['LSB_resolution'] * adxl_constants['GRAVITY']
+    accel_y = accel_y * adxl_constants['LSB_resolution'] * adxl_constants['GRAVITY']
+    accel_z = accel_z * adxl_constants['LSB_resolution'] * adxl_constants['GRAVITY']
+
+    accel_x = int(accel_x*10000)/10000
+    accel_y = int(accel_y*10000)/10000
+    accel_z = int(accel_z*10000)/10000
+    
+    return accel_x, accel_y, accel_z
 
 poll_obj = select.poll()
 poll_obj.register(sys.stdin, 1)
@@ -115,15 +137,7 @@ while True:
             if res is not None:
                 print(str(res))
             else:
-                print('boo')
-#def getADXL()
-#start, vertservo, horizonservo = initialize_pico()
-#if(start):
-#    sleep(2)
-#    setServoCycle (vertservo, 1200)
-#    sleep(2)
-#    setServoCycle (vertservo, 5400)
-#    print(vertservo.duty_u16())d
+                print('No response')
 
 
 
