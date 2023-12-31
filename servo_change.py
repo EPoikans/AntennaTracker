@@ -11,5 +11,10 @@ def anglechangeFn(angle, end_angle, accelerometer):
 	#print(anglechange)
 	if(accelerometer):
 		print("b")
+	else:
+		if(end_angle <= 90):
+			pwm_freq = int(3400/90*end_angle)
+		else:
+			pwm_freq = 5400
 	new_angle = end_angle
 	return new_angle
