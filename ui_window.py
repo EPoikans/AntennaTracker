@@ -13,12 +13,13 @@ from collections.abc import Iterable
 from PIL import Image, ImageTk
 from pymavlink import mavutil
 import servo_change
+import serial_com
 
 
 def main():
 	global mainwindow
 	mainwindow = tk.Tk()
-	mainwindow.geometry("800x480")
+	mainwindow.geometry("480x320")
 	mainwindow.title("AntennaTracker")
 	home_pos_choice_label = tk.Label(mainwindow, text="Select how to obtain home GPS position and compass heading")
 	home_pos_choice_label.grid(row=0, column=0, padx=10, pady=2)
@@ -46,6 +47,8 @@ def main():
 	system_checkbox3.grid(row=4, column=1, sticky="w", padx=10, pady=5)
 	init_button = tk.Button(mainwindow, text="Initialize program", command=initialize)
 	init_button.grid(row=5,column=0,columnspan=2, pady=5)
+	init_pico = tk.Button(mainwindow, text="Initialize Pico", command=serial_com.init_pico) #No check if done currently!!!!!!!
+	init_pico.grid(row=6,column=0,columnspan=2, pady=5)
 	mavlink_sample= tk.Button(mainwindow, text="See mavlink sample", command=SampleMavlink)
 	mavlink_sample.grid(row=10,column=1, pady=5)
 	OSD_sample= tk.Button(mainwindow, text="See OSD sample", command=SampleVideo)
@@ -278,6 +281,8 @@ def ReturnBttFn(window):
 def StartTracking():
 	global loop_running
 	loop_running = True
+	serial_com.init_pico
+	time.sleep(0.5)
 	threading.Thread(target=TrackingLoop).start()
 
 def StopTracking():
@@ -347,22 +352,67 @@ def TrackingLoop():
 			distancefromhome.config(text="Distance from home - " + str(int(direct_distance)) + " New heading - "+ str(int(newheading_from_home)) + " New angle - " + str(int(new_angle)))
 			dronecoord.config(text="Drone coordinates - " + str(dronecoords_save))
 			workWindow.after(50)
-			heading = servo_change.headingchangeFn(heading, newheading_from_home, initialize_data.accelerometer_bool)
+			heading = servo_change.headingchangeFn(heading, newheading_from_home, initialize_data.accelerometer_bool, gpshome[3])
 			angle = servo_change.anglechangeFn(angle, new_angle, initialize_data.accelerometer_bool)
 			if(sanitycount >=10 or ((osd_sanitycount >=10 or not osd_for_gps) and (mav_sanitycount >= 10 or not mavlink_for_gps))):
 				loop_running = False
-				FailsafeTracking(dronecoords_save=gpshome)
-			time.sleep(0.1)
+				StartFailsafeTracking(heading, angle)
+			time.sleep(0.05)
 			
 	else:
 		home_coords.config(text=("Home coordinates - Invalid"))
 		loop_running = False
 
-def FailsafeTracking(lastcoords):
-	print("")
+def StartFailsafeTracking(heading, angle):
+	global loop_running_failsafe
+	loop_running_failsafe = True
+	serial_com.init_pico
+	time.sleep(0.5)
+	threading.Thread(target=FailsafeTracking, args=(heading, angle)).start()
+
+def StopTrackingFailsafe():
+	global loop_running_failsafe
+	loop_running_failsafe = False
+
+
+def FailsafeTracking(lastheading, lastangle):
+	global loop_running_failsafe
+	global gpshome
+	homeheading = gpshome[3]
+	while loop_running_failsafe:
+		workWindow.after(550)
+		servo_change.headingChangeFailsafe(lastheading+20, homeheading)
+		servo_change.angleChangeFailsafe(lastangle-10)
+		workWindow.after(50)
+		servo_change.angleChangeFailsafe(lastangle)
+		workWindow.after(50)
+		servo_change.angleChangeFailsafe(lastangle+10)
+		workWindow.after(550)
+		servo_change.headingChangeFailsafe(lastheading, homeheading)
+		servo_change.angleChangeFailsafe(lastangle-10)
+		workWindow.after(50)
+		servo_change.angleChangeFailsafe(lastangle)
+		workWindow.after(50)
+		servo_change.angleChangeFailsafe(lastangle+10)
+		workWindow.after(550)
+		servo_change.headingChangeFailsafe(lastheading-20, homeheading)
+		servo_change.angleChangeFailsafe(lastangle-10)
+		workWindow.after(550)
+		servo_change.headingChangeFailsafe(lastheading, homeheading)
+		servo_change.angleChangeFailsafe(lastangle-10)
+		workWindow.after(50)
+		servo_change.angleChangeFailsafe(lastangle)
+		workWindow.after(50)
+		servo_change.angleChangeFailsafe(lastangle+10)
+		
 
 def ManualControl():
 	print("")
+
+def HaltTracker():
+	global loop_running_failsafe, loop_running
+	loop_running_failsafe, loop_running = False, False
+
 
 def workingWindow():
 	global workWindow
@@ -386,12 +436,16 @@ def workingWindow():
 	Start_btt.grid(row=8,column=0, pady=5)
 	Stop_btt= tk.Button(workWindow, text="Stop antenna tracking", command=StopTracking)
 	Stop_btt.grid(row=8,column=1, pady=5)
-	Failsafe_Label = tk.Label(workWindow, text="Attempt to rotate antenna in the last valid coordinate direction")
+	Failsafe_Label = tk.Label(workWindow, text="Attempt to rotate antenna in large area in front")
 	Failsafe_Label.grid(row=7,column=2, columnspan= 2, pady=5)
-	Failsafe_btt= tk.Button(workWindow, text="Failsafe", command=FailsafeTracking)
+	Failsafe_btt= tk.Button(workWindow, text="Failsafe tracking", command=lambda: StartFailsafeTracking(gpshome[3], 40))
 	Failsafe_btt.grid(row=8,column=2, pady=5)
+	Failsafe_btt= tk.Button(workWindow, text="Failsafe tracking stop", command=StopTrackingFailsafe)
+	Failsafe_btt.grid(row=9,column=2, pady=5)
+	Halt_btt= tk.Button(workWindow, text="Halt tracker", command=HaltTracker)
+	Halt_btt.grid(row=10,column=3, pady=5)
 	Manual_btt= tk.Button(workWindow, text="Manual control", command=ManualControl)
-	Manual_btt.grid(row=8,column=3, pady=5)
+	Manual_btt.grid(row=11,column=3, pady=5)
 	Return_btt= tk.Button(workWindow, text="Return", command=lambda: ReturnBttFn(workWindow))
 	Return_btt.grid(row=15,column=0, pady=50)
 

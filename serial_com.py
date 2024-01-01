@@ -17,10 +17,53 @@ def send_cmd(command):
         print(f"Error: {e}")
         return None
 
-send_cmd('initialize_pico accelerometer' + '\n')
-time.sleep(2)
-send_cmd('setServoCycle vert_servo 5000' + '\n')
-time.sleep(2)
-send_cmd('setServoCycle vert_servo 7000' + '\n')
-send_cmd('setServoCycle horizon_servo 2000' + '\n')
-send_cmd('getADXL' + '\n')
+def init_pico(accel = False):
+    send_cmd('initialize_pico '+ str(accel) + '\n')
+
+def setVerticalServo(pwm_freq, pwm_current_estimate):
+    if isinstance(pwm_freq, int) or isinstance(pwm_freq, float):
+        if(pwm_freq > pwm_current_estimate):
+            pwm_diff = pwm_freq - pwm_current_estimate
+            i=0
+            for i in range(int(pwm_diff/25)):
+                if(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/25)))) >= int(pwm_freq)):
+                    send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n')
+                    break
+                send_cmd('setServoCycle vert_servo '+ str(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/25))))) + '\n')
+        elif(pwm_freq < pwm_current_estimate):
+            pwm_diff = pwm_current_estimate - pwm_freq
+            i=0
+            for i in range(int(pwm_diff/25)):
+                if(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/25)))) >= int(pwm_freq)):
+                    send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n')
+                    break
+                send_cmd('setServoCycle vert_servo '+ str(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/25))))) + '\n')
+        else:
+            send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n')
+
+def setHorizontalServo(pwm_freq, pwm_current_estimate):
+    if isinstance(pwm_freq, int) or isinstance(pwm_freq, float):
+        if(pwm_freq > pwm_current_estimate):
+            pwm_diff = pwm_freq - pwm_current_estimate
+            i=0
+            for i in range(int(pwm_diff/15)):
+                if(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/15)))) >= int(pwm_freq)):
+                    send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n')
+                    break
+                send_cmd('setServoCycle horizon_servo '+ str(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/15))))) + '\n')
+            
+        elif(pwm_freq < pwm_current_estimate):
+            pwm_diff = pwm_current_estimate - pwm_freq
+            i=0
+            for i in range(int(pwm_diff/15)):
+                if(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/15)))) >= int(pwm_freq)):
+                    send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n')
+                    break
+                send_cmd('setServoCycle horizon_servo '+ str(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/15))))) + '\n')
+        else:
+            send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n')
+
+def getAccelVal():
+    return send_cmd('getADXL' + '\n')
+
+#send_cmd('setServoCycle horizon_servo 4000' + '\n')

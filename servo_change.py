@@ -1,5 +1,25 @@
-def headingchangeFn(heading, endheading_from_home, accelerometer):
-	headingchange = endheading_from_home - heading
+import serial_com
+
+def headingchangeFn(heading, endheading_from_home, accelerometer, zeroHeading):
+	headingdiff = zeroHeading - endheading_from_home
+	pwm_headingchange = zeroHeading - heading
+	if(abs(headingdiff)>=100):
+		if(headingdiff<0):
+			pwm_current_estimate = 1250
+			pwm_freq = 1250
+			serial_com.setHorizontalServo(pwm_freq, pwm_current_estimate)
+		elif(headingdiff>=0):
+			pwm_current_estimate = 8750
+			pwm_freq = 8750
+			serial_com.setHorizontalServo(pwm_freq, pwm_current_estimate)
+	elif(headingdiff<0):
+		pwm_current_estimate = 5000 - int(3750/100*pwm_headingchange)
+		pwm_freq = 5000 - int(3750/100*abs(headingdiff))
+		serial_com.setHorizontalServo(pwm_freq, pwm_current_estimate)
+	elif(headingdiff>=0):
+		pwm_current_estimate = 5000 + int(3750/100*pwm_headingchange)
+		pwm_freq = 5000 + int(3750/100*abs(headingdiff))
+		serial_com.setHorizontalServo(pwm_freq, pwm_current_estimate)
 	#print(headingchange)
 	if(accelerometer):
 		print("b")
@@ -7,14 +27,41 @@ def headingchangeFn(heading, endheading_from_home, accelerometer):
 	return new_heading
 
 def anglechangeFn(angle, end_angle, accelerometer):
-	anglechange = end_angle - angle
-	#print(anglechange)
 	if(accelerometer):
 		print("b")
 	else:
 		if(end_angle <= 90):
-			pwm_freq = int(3400/90*end_angle)
+			pwm_current_estimate = 2000 + int(3400/90*angle)
+			pwm_freq = 2000 + int(3400/90*end_angle) #2000 - 0degrees
+			serial_com.setVerticalServo(pwm_freq, pwm_current_estimate)
 		else:
 			pwm_freq = 5400
+			serial_com.setVerticalServo(pwm_freq, pwm_freq)
 	new_angle = end_angle
 	return new_angle
+
+def headingChangeFailsafe(heading, homeheading):
+	headingdiff = homeheading - heading
+	if(abs(headingdiff)>=100):
+		if(headingdiff<0):
+			pwm_freq = 1250
+			serial_com.setHorizontalServo(pwm_freq, pwm_freq)
+		elif(headingdiff>=0):
+			pwm_freq = 8750
+			serial_com.setHorizontalServo(pwm_freq, pwm_freq)
+	elif(headingdiff<0):
+		pwm_freq = 5000 - int((3750/100)*abs(headingdiff))
+		serial_com.setHorizontalServo(pwm_freq, pwm_freq)
+	elif(headingdiff>=0):
+		pwm_freq = 5000 + int((3750/100)*abs(headingdiff))
+		serial_com.setHorizontalServo(pwm_freq, pwm_freq)
+	return
+
+def angleChangeFailsafe(angle):
+	if(angle <= 90):
+			pwm_freq = 2000 + int(3400/90*angle) #2000 - 0degrees
+			serial_com.setVerticalServo(pwm_freq, pwm_freq)
+	else:
+		pwm_freq = 5400
+		serial_com.setVerticalServo(pwm_freq, pwm_freq)
+	return

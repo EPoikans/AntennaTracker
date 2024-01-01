@@ -43,7 +43,7 @@ def initialize_pico(accelerometer = False):
     vertservo.freq(50)
     horizonservo.freq(50)
     vertservo.duty_u16(2000) #Vertical angle servo 2000-0deg, 5400 -90deg
-    horizonservo.duty_u16(4300)
+    horizonservo.duty_u16(5000)
     global vertservo, horizonservo, state
     state = True
     return state, vertservo, horizonservo
@@ -94,7 +94,10 @@ def exec_cmd(command):
             setServoCycle(horizonservo, pwmint)
             return("Set horizontal servo")
     elif fnname == "initialize_pico":
-        state, vertservo, horizonservo = initialize_pico()
+        if(len(cmdparts)>=2 and cmdparts[1] == "accelerometer"):
+            state, vertservo, horizonservo = initialize_pico(True)
+        else:
+            state, vertservo, horizonservo = initialize_pico()
         if(state):
             return("Initialized")
     elif fnname == "getADXL":
@@ -123,7 +126,9 @@ def getADXL():
 
 poll_obj = select.poll()
 poll_obj.register(sys.stdin, 1)
+sleep(10)
 initialize_pico()
+sleep(2)
 while True:
     global state, vertservo, horizonservo
     if poll_obj.poll(20):     
@@ -138,6 +143,8 @@ while True:
                 print(str(res))
             else:
                 print('No response')
+
+
 
 
 
