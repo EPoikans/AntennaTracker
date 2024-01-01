@@ -38,7 +38,7 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 			videofps = videofeed.get(cv2.CAP_PROP_FPS)
 			capture_frequency = 1 # analyzed frames per second, 1 recomened
 		else:
-			videofeed = cv2.VideoCapture(1) #Value specifies which video input device is used camera or usb hdmi capture card
+			videofeed = cv2.VideoCapture(0) #Value specifies which video input device is used camera or usb hdmi capture card
 		while((videofeed.isOpened()!= True) and (initial == True)): #If videofeed is not opened during the initial launch waits 1s until it loads
 			cv2.waitKey(1000)
 			print('Awaiting video')

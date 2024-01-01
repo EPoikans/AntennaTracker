@@ -11,7 +11,7 @@ def send_cmd(command):
             ser.write(command.encode())
             time.sleep(0.01)
             response = ser.readline().decode().strip()
-            print(f"Sent: {command}Received: {response}")
+            #print(f"Sent: {command}Received: {response}")
             return response
     except Exception as e:
         print(f"Error: {e}")
@@ -24,7 +24,7 @@ def setVerticalServo(pwm_freq, pwm_current_estimate):
     if isinstance(pwm_freq, int) or isinstance(pwm_freq, float):
         if(pwm_freq > pwm_current_estimate):
             pwm_diff = pwm_freq - pwm_current_estimate
-            i=0
+            i=1
             for i in range(int(pwm_diff/25)):
                 if(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/25)))) >= int(pwm_freq)):
                     send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n')
@@ -32,7 +32,7 @@ def setVerticalServo(pwm_freq, pwm_current_estimate):
                 send_cmd('setServoCycle vert_servo '+ str(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/25))))) + '\n')
         elif(pwm_freq < pwm_current_estimate):
             pwm_diff = pwm_current_estimate - pwm_freq
-            i=0
+            i=1
             for i in range(int(pwm_diff/25)):
                 if(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/25)))) >= int(pwm_freq)):
                     send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n')

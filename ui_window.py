@@ -14,22 +14,35 @@ from PIL import Image, ImageTk
 from pymavlink import mavutil
 import servo_change
 import serial_com
+import platform
 
 
 def main():
+	global comp_setup, geometry_res
+	if platform.system().lower() == 'linux':
+		try:
+			import RPi.GPIO as GPIO
+			comp_setup = 'Raspi'
+			geometry_res = '480x320'
+		except ImportError:
+			comp_setup = 'PC'
+			geometry_res = '800x480'
+	else:
+		comp_setup = 'PC'
+		geometry_res = '800x480'
 	global mainwindow
 	mainwindow = tk.Tk()
-	mainwindow.geometry("480x320")
+	mainwindow.geometry(geometry_res)
 	mainwindow.title("AntennaTracker")
-	home_pos_choice_label = tk.Label(mainwindow, text="Select how to obtain home GPS position and compass heading")
+	home_pos_choice_label = tk.Label(mainwindow)
 	home_pos_choice_label.grid(row=0, column=0, padx=10, pady=2)
 	global home_pos_choice_selected
 	home_pos_choice_selected = tk.IntVar()
-	homebutton = tk.Radiobutton(mainwindow, text="Mavlink home position", variable=home_pos_choice_selected, value=1)
+	homebutton = tk.Radiobutton(mainwindow, text="Mavlink home", variable=home_pos_choice_selected, value=1)
 	homebutton.grid(row=1, column=0, sticky="w", padx=8, pady=2)
-	homebutton = tk.Radiobutton(mainwindow, text="OSD home position", variable=home_pos_choice_selected, value=2)
+	homebutton = tk.Radiobutton(mainwindow, text="OSD home", variable=home_pos_choice_selected, value=2)
 	homebutton.grid(row=2, column=0, sticky="w", padx=8, pady=2)
-	homebutton = tk.Radiobutton(mainwindow, text="Ground station GPS module", variable=home_pos_choice_selected, value=3)
+	homebutton = tk.Radiobutton(mainwindow, text="Ground GPS", variable=home_pos_choice_selected, value=3)
 	homebutton.grid(row=3, column=0, sticky="w", padx=8, pady=2)
 	system_choice_label = tk.Label(mainwindow, text="Select which system or systems to use for obtaining GPS coordinates")
 	system_choice_label.grid(row=0, column=1, padx=10, pady=2)
@@ -41,10 +54,12 @@ def main():
 	system_checkbox_var2 = tk.IntVar()
 	system_checkbox2 = tk.Checkbutton(mainwindow, text="Use Mavlink for GPS coordinates", variable=system_checkbox_var2)
 	system_checkbox2.grid(row=2, column=1, sticky="w", padx=10, pady=5)
+	"""
 	global system_checkbox_var3
 	system_checkbox_var3 = tk.IntVar()
 	system_checkbox3 = tk.Checkbutton(mainwindow, text="Use accelerometer for vertical angle measurements", variable=system_checkbox_var3)
 	system_checkbox3.grid(row=4, column=1, sticky="w", padx=10, pady=5)
+	"""
 	init_button = tk.Button(mainwindow, text="Initialize program", command=initialize)
 	init_button.grid(row=5,column=0,columnspan=2, pady=5)
 	init_pico = tk.Button(mainwindow, text="Initialize Pico", command=serial_com.init_pico) #No check if done currently!!!!!!!
@@ -58,6 +73,11 @@ def main():
 	error_label.grid(row=6, column=0, columnspan=2, pady=5)
 	Return_btt= tk.Button(mainwindow, text="Quit", command=lambda: ReturnBttFn(mainwindow))
 	Return_btt.grid(row=20,column=0, pady=5)
+	if(comp_setup=='PC'):
+		home_pos_choice_label.config(text="Select how to obtain home GPS position and compass heading")
+		system_choice_label.config()
+	elif(comp_setup=='Raspi'):
+		print("")
 	
 	mainwindow.mainloop()
 
@@ -67,7 +87,7 @@ def initialize():
 	osd_for_gps = system_checkbox_var1.get()
 	global mavlink_for_gps
 	mavlink_for_gps = system_checkbox_var2.get()
-	accelerometer = system_checkbox_var3.get()
+	accelerometer = False #system_checkbox_var3.get()
 	global gps_home_window
 	if(home_gps_select):
 		if(osd_for_gps or mavlink_for_gps):
@@ -76,7 +96,7 @@ def initialize():
 					error_label.config(text="")
 					initialize_data.initialize_data(bool(mavlink_for_gps), bool(osd_for_gps), 'mavlink', False, accelerometer)
 					gps_home_window = tk.Toplevel(mainwindow)
-					gps_home_window.geometry("800x480")
+					gps_home_window.geometry(geometry_res)
 					gps_home_window.title("Await home coordinates")
 					home_label = tk.Label(gps_home_window, text="Arm drone to set home. Awaiting mavlink home set message")
 					home_label.grid(row=0,column=0, pady=5)
@@ -103,7 +123,7 @@ def initialize():
 					error_label.config(text="")
 					initialize_data.initialize_data(bool(mavlink_for_gps), bool(osd_for_gps), 'OSD', False, accelerometer)
 					gps_home_window = tk.Toplevel(mainwindow)
-					gps_home_window.geometry("800x480")
+					gps_home_window.geometry(geometry_res)
 					gps_home_window.title("Set home coordinates")
 					home_label = tk.Label(gps_home_window, text="Set current drone GPS coordinates and heading as ground station")
 					home_label.grid(row=0,column=0, pady=5)
@@ -195,7 +215,7 @@ def SampleVideo():
 	global samplevideowindow
 	initialize_data.initialize_data(False, True, '', False, False) 
 	samplevideowindow = tk.Toplevel(mainwindow)
-	samplevideowindow.geometry("800x480")
+	samplevideowindow.geometry(geometry_res)
 	samplevideowindow.title("Sample video")
 	samplevideofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
 	videofps = samplevideofeed.get(cv2.CAP_PROP_FPS)
@@ -213,7 +233,7 @@ def SampleVideo():
 def SampleMavlink():
 	global sampleMavlinkWindow
 	sampleMavlinkWindow = tk.Toplevel(mainwindow)
-	sampleMavlinkWindow.geometry("800x480")
+	sampleMavlinkWindow.geometry(geometry_res)
 	sampleMavlinkWindow.title("Sample mavlink")
 	the_connection_sample = mavutil.mavlink_connection('./TestingFiles/2023-09-22 12-26-58.tlog')
 	the_connection_sample.wait_heartbeat()
@@ -248,7 +268,7 @@ def testingWindow():
 	global testing_window 
 	testing_window = tk.Toplevel(workWindow)
 	testing_window.title("Functionality testing")
-	testing_window.geometry("800x480")
+	testing_window.geometry(geometry_res)
 	
 	mavlink_test = tk.Button(testing_window, text="Test mavlink incoming messages", command=TestMavlinkLoop)
 	global mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4
@@ -312,8 +332,10 @@ def TrackingLoop():
 						osd_lon_sanity = drone_coords_osd[1]
 					else:
 						sanitycount+=1
+						
 				else:
 					osd_sanitycount+=1
+					print(osd_sanitycount)
 			if(mavlink_for_gps):
 				drone_coords_mav = mavlink_msg_recieving.get_gps_mavlink(initialize_data.the_connection)
 				if(isinstance(drone_coords_mav, np.ndarray)):
@@ -349,15 +371,18 @@ def TrackingLoop():
 			dronecoords_save[1] = int(dronecoords_save[1]*1000000000)/1000000000
 			dronecoords_save[2] = int(dronecoords_save[2])
 			direct_distance, newheading_from_home, new_angle = gps_calculation.calc_gps_distance(gpshome[0], gpshome[1], dronecoords_save[0], dronecoords_save[1], heading, angle, dronecoords_save[2])
+			#if(abs(direct_distance_sanity - direct_distance)<=30):
+			#	direct_distance_sanity = direct_distance
+			#	new_angle = angle
 			distancefromhome.config(text="Distance from home - " + str(int(direct_distance)) + " New heading - "+ str(int(newheading_from_home)) + " New angle - " + str(int(new_angle)))
 			dronecoord.config(text="Drone coordinates - " + str(dronecoords_save))
 			workWindow.after(50)
 			heading = servo_change.headingchangeFn(heading, newheading_from_home, initialize_data.accelerometer_bool, gpshome[3])
 			angle = servo_change.anglechangeFn(angle, new_angle, initialize_data.accelerometer_bool)
-			if(sanitycount >=10 or ((osd_sanitycount >=10 or not osd_for_gps) and (mav_sanitycount >= 10 or not mavlink_for_gps))):
+			if(sanitycount >=1000 or ((osd_sanitycount >=1000 or not osd_for_gps) and (mav_sanitycount >= 1000 or not mavlink_for_gps))):
 				loop_running = False
 				StartFailsafeTracking(heading, angle)
-			time.sleep(0.05)
+			time.sleep(0.2)
 			
 	else:
 		home_coords.config(text=("Home coordinates - Invalid"))
@@ -380,34 +405,16 @@ def FailsafeTracking(lastheading, lastangle):
 	global gpshome
 	homeheading = gpshome[3]
 	while loop_running_failsafe:
-		workWindow.after(550)
+		workWindow.after(350)
 		servo_change.headingChangeFailsafe(lastheading+20, homeheading)
-		servo_change.angleChangeFailsafe(lastangle-10)
-		workWindow.after(50)
 		servo_change.angleChangeFailsafe(lastangle)
-		workWindow.after(50)
-		servo_change.angleChangeFailsafe(lastangle+10)
-		workWindow.after(550)
+		workWindow.after(350)
 		servo_change.headingChangeFailsafe(lastheading, homeheading)
-		servo_change.angleChangeFailsafe(lastangle-10)
-		workWindow.after(50)
-		servo_change.angleChangeFailsafe(lastangle)
-		workWindow.after(50)
-		servo_change.angleChangeFailsafe(lastangle+10)
-		workWindow.after(550)
+		workWindow.after(350)
 		servo_change.headingChangeFailsafe(lastheading-20, homeheading)
-		servo_change.angleChangeFailsafe(lastangle-10)
-		workWindow.after(550)
+		workWindow.after(350)
 		servo_change.headingChangeFailsafe(lastheading, homeheading)
-		servo_change.angleChangeFailsafe(lastangle-10)
-		workWindow.after(50)
-		servo_change.angleChangeFailsafe(lastangle)
-		workWindow.after(50)
-		servo_change.angleChangeFailsafe(lastangle+10)
 		
-
-def ManualControl():
-	print("")
 
 def HaltTracker():
 	global loop_running_failsafe, loop_running
@@ -417,7 +424,7 @@ def HaltTracker():
 def workingWindow():
 	global workWindow
 	workWindow = tk.Toplevel(mainwindow)
-	workWindow.geometry("800x480")
+	workWindow.geometry(geometry_res)
 	workWindow.title("Tracking")
 	testing_win= tk.Button(workWindow, text="Test OSD coordinates and Mavlink processed feed", command=testingWindow)
 	testing_win.grid(row=10,column=0, pady=50)
@@ -444,8 +451,6 @@ def workingWindow():
 	Failsafe_btt.grid(row=9,column=2, pady=5)
 	Halt_btt= tk.Button(workWindow, text="Halt tracker", command=HaltTracker)
 	Halt_btt.grid(row=10,column=3, pady=5)
-	Manual_btt= tk.Button(workWindow, text="Manual control", command=ManualControl)
-	Manual_btt.grid(row=11,column=3, pady=5)
 	Return_btt= tk.Button(workWindow, text="Return", command=lambda: ReturnBttFn(workWindow))
 	Return_btt.grid(row=15,column=0, pady=50)
 

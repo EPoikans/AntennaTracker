@@ -1,8 +1,4 @@
 """
-
-MicroPython code stored locally on the raspberry pi Pico
-
-
 from machine import Pin, SPI, PWM
 import sys
 from time import sleep
@@ -23,6 +19,8 @@ adxl_constants = {
 
 def initialize_pico(accelerometer = False):  
     global state, vertservo, horizonservo
+    """
+"""
     global spi, cs
     # Initialize SPI
     spi = SPI(0,baudrate=500000,polarity=1,phase=1,bits=8,firstbit=SPI.MSB,sck=Pin(2),mosi=Pin(3),miso=Pin(0))
@@ -38,6 +36,8 @@ def initialize_pico(accelerometer = False):
         reg_write(spi, cs, adxl_constants['REG_POWER_CTL'], data)
         data = reg_read(spi, cs, adxl_constants['REG_POWER_CTL'])
         data = reg_read(spi, cs, adxl_constants['REG_DATAX0'], 6)
+"""
+"""
     vertservo = PWM(Pin(5))
     horizonservo = PWM(Pin(6))
     vertservo.freq(50)
@@ -95,15 +95,20 @@ def exec_cmd(command):
             return("Set horizontal servo")
     elif fnname == "initialize_pico":
         if(len(cmdparts)>=2 and cmdparts[1] == "accelerometer"):
-            state, vertservo, horizonservo = initialize_pico(True)
+            state, vertservo, horizonservo = initialize_pico(False) #True if use adxl345
         else:
             state, vertservo, horizonservo = initialize_pico()
         if(state):
             return("Initialized")
+
+"""
+
+"""
     elif fnname == "getADXL":
         return getADXL()
+    """
         
-
+"""
 def getADXL():
     global spi, cs
     dataX = reg_read(spi, cs, adxl_constants['REG_DATAX0'], 2)
@@ -123,10 +128,13 @@ def getADXL():
     accel_z = int(accel_z*10000)/10000
     
     return accel_x, accel_y, accel_z
+"""
 
+
+"""
 poll_obj = select.poll()
 poll_obj.register(sys.stdin, 1)
-sleep(10)
+sleep(6)
 initialize_pico()
 sleep(2)
 while True:
@@ -143,9 +151,5 @@ while True:
                 print(str(res))
             else:
                 print('No response')
-
-
-
-
 
 """
