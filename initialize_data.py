@@ -98,7 +98,7 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		boundingbox_arr = np.array([lat_boundbox, lon_boundbox, alt_boundbox, heading_boundbox])
 
 	if(useMavlink):
-		connect_adress = '/dev/ttyUSB0'
+		connect_adress = 'COM5'
 		testfile = './TestingFiles/2023-09-22 12-26-58.tlog'
 		usetestfile = True #Used for testing without connection to drone using logs like in sample viewing, should be False for actual flights
 		if(usetestfile):
@@ -106,9 +106,8 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		else:
 			usedaddress = connect_adress
 		global the_connection
-		the_connection = mavutil.mavlink_connection(usedaddress)
+		the_connection = mavutil.mavlink_connection(usedaddress, baud=57600)
 		the_connection.wait_heartbeat()
-
 		if(usetestfile == False):
 			the_connection.mav.command_long_send(
 				the_connection.target_system, the_connection.target_component,

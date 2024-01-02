@@ -1,43 +1,28 @@
 """
-from machine import Pin, SPI, PWM
+from machine import Pin, I2C, UART, PWM
 import sys
 from time import sleep
 import select
 import utime
 import ustruct
+import math
 
-adxl_constants = {
-    'REG_DEVID': 0x00,
-    'DEVID': 0xE5,
-    'REG_POWER_CTL': 0x2D,
-    'REG_DATAX0': 0x32,
-    'REG_DATAY0': 0x34,
-    'REG_DATAZ0': 0x36,
-    'LSB_resolution': 3.9 / 1023, #3.9 mg/LSB adxl345 
-    'GRAVITY': 9.80665,
+compass_reg = { #QMC5883L
+    "MAGNETO_ADDRESS": 0xD,
+    "MAGNETO_ID": 0xFF,
+    "MAGNETO_ID_ADD": 0xD,
+    "CONTROLREG1": 0x09,
+    "CONTROLREG2": 0xA,
+    "DATAREG": 0x00,
+    "DATACONV": 100.0 / 3000.0, #Convert LSb to uT (microtesla) +/-8Gauss field range - 3000 LSb/Gauss
 }
 
 def initialize_pico(accelerometer = False):  
-    global state, vertservo, horizonservo
-    """
-"""
-    global spi, cs
-    # Initialize SPI
-    spi = SPI(0,baudrate=500000,polarity=1,phase=1,bits=8,firstbit=SPI.MSB,sck=Pin(2),mosi=Pin(3),miso=Pin(0))
-    cs = Pin(1, mode=Pin.OUT, value=1)
-    if(accelerometer):
-        reg_read(spi, cs, adxl_constants['REG_DEVID'])
-        data = reg_read(spi, cs, adxl_constants['REG_DEVID'])
-        if (data != bytearray((adxl_constants['DEVID'],))):
-            print("ERROR: Could not communicate with ADXL345")
-            sys.exit()
-        data = reg_read(spi,cs, adxl_constants['REG_POWER_CTL'])
-        data = int.from_bytes(data, "big") or (1 << 3)
-        reg_write(spi, cs, adxl_constants['REG_POWER_CTL'], data)
-        data = reg_read(spi, cs, adxl_constants['REG_POWER_CTL'])
-        data = reg_read(spi, cs, adxl_constants['REG_DATAX0'], 6)
-"""
-"""
+    global state, vertservo, horizonservo, i2c, uart_gps
+    i2c = I2C(1, scl=Pin(19), sda=Pin(18), freq=400000)
+    uart_gps = UART(0, baudrate=115200, tx=Pin(16), rx=Pin(17))
+    if compass_reg["MAGNETO_ADDRESS"] in i2c.scan():
+        i2c.writeto_mem(compass_reg["MAGNETO_ADDRESS"], compass_reg['CONTROLREG1'], bytes([0x1D]))
     vertservo = PWM(Pin(5))
     horizonservo = PWM(Pin(6))
     vertservo.freq(50)
@@ -48,28 +33,32 @@ def initialize_pico(accelerometer = False):
     state = True
     return state, vertservo, horizonservo
 
-def reg_write(spi, cs, reg, data):
-    msg = bytearray()
-    msg.append(0x00 or reg)
-    msg.append(data)
-    cs.value(0)
-    spi.write(msg)
-    cs.value(1)
-
-def reg_read(spi, cs, reg, nbytes=1):
-    if nbytes < 1:
-        return bytearray()
-    elif nbytes == 1:
-        mb = 0
-    else:
-        mb = 1
-    msg = bytearray()
-    msg.append(0x80 | (mb << 6) | reg)
-    cs.value(0)
-    spi.write(msg)
-    data = spi.read(nbytes)
-    cs.value(1)
-    return data
+def readMagnetometer():
+    global i2c
+    try:
+        data=i2c.readfrom_mem(compass_reg["MAGNETO_ADDRESS"], compass_reg["DATAREG"], 8)
+        x = ((data[0] << 8) | data[1])
+        z = ((data[2] << 8) | data[3])
+        y = ((data[4] << 8) | data[5])
+        if x > 32767:
+            x -= 65536
+        if y > 32767:
+            y -= 65536
+        if z > 32767:
+            z -= 65536
+        x=x*compass_reg["DATACONV"]
+        y=y*compass_reg["DATACONV"]
+        z=z*compass_reg["DATACONV"]
+        heading = math.atan2(y, x) * 180 / math.pi
+        day = 1 #January 1st
+        declination_angle = math.sin(((-23.45)*math.pi/180) * math.cos(360/365 * (day + 10)))
+        heading += declination_angle
+        if heading < 0:
+            heading += 360
+        sleep(0.01)
+        return heading
+    except:
+        return ('err')
 
 def setServoCycle (device, position):
 
@@ -100,41 +89,105 @@ def exec_cmd(command):
             state, vertservo, horizonservo = initialize_pico()
         if(state):
             return("Initialized")
+    elif fnname == "readMagnetometer":
+        heading = readMagnetometer()
+        return heading
+    elif fnname == "pollGPS":
+        lat, lon = pollGPS()
+        return lat, lon
+    elif fnname == "checkGPSSat":
+        sat_count = checkGPSSat()
+        return sat_count
 
+"""
+"""
+NMEA 0183 messages
+
+Talker IDs -
+BD or GB - Beidou
+GA - Galileo
+GP - GPS
+GL - GLONASS
+GN - Combined talkers
+
+$(Talker ID) + GGA  - Global Positioning System Fixed Data
+$(Talker ID) + GLL - Geographic Position-- Latitude and Longitude 
+$(Talker ID) + GSA - GNSS Dilution of Precision and active satellites 
+$(Talker ID) + GSV - GNSS satellites in view 
+$(Talker ID) + RMC - Recommended minimum specific GPS data 
+$(Talker ID) + VTG - Course over ground and ground speed 
+
+<CR><LF> or \r\n - end of message
+$ - begining of message
+
+$GNGSA - active sattelite count
+$GNGLL - lat and lon 
 """
 
 """
-    elif fnname == "getADXL":
-        return getADXL()
-    """
-        
-"""
-def getADXL():
-    global spi, cs
-    dataX = reg_read(spi, cs, adxl_constants['REG_DATAX0'], 2)
-    dataY = reg_read(spi, cs, adxl_constants['REG_DATAY0'], 2)
-    dataZ = reg_read(spi, cs, adxl_constants['REG_DATAZ0'], 2)
-    
-    accel_x = ustruct.unpack_from("<h", dataX, 0)[0]
-    accel_y = ustruct.unpack_from("<h", dataY, 0)[0]
-    accel_z = ustruct.unpack_from("<h", dataZ, 0)[0]
 
-    accel_x = accel_x * adxl_constants['LSB_resolution'] * adxl_constants['GRAVITY']
-    accel_y = accel_y * adxl_constants['LSB_resolution'] * adxl_constants['GRAVITY']
-    accel_z = accel_z * adxl_constants['LSB_resolution'] * adxl_constants['GRAVITY']
+def pollGPS():
+    global uart_gps
+    lat, lon, lat_deg, lat_min, lon_deg, lon_min = 0,0,0,0,0,0
+    timeoutvar = 0
+    while True:
+        gps_data = uart_gps.readline()
+        if(gps_data != 'None'):
+            try:    
+                gps_fields = gps_data.decode().split(',')
+                if(gps_fields[0] == '$GNGLL' and gps_fields[6] == 'A'):
+                    lat_deg = gps_fields[1][:2]
+                    lat_min = gps_fields[1][2:]
+                    lon_deg = gps_fields[3][:3]
+                    lon_min = gps_fields[3][3:]
+                    lat = round((float(lat_deg) + (float(lat_min)/60)), 7)
+                    lon = round((float(lon_deg) + (float(lon_min)/60)), 7)
+                    return lat, lon
+                elif(gps_fields[0] == '$GNGGA' and int(gps_fields[7])>=6):
+                    lat_deg = gps_fields[2][:2]
+                    lat_min = gps_fields[2][2:]
+                    lon_deg = gps_fields[4][:3]
+                    lon_min = gps_fields[4][3:]
+                    lat = round((float(lat_deg) + (float(lat_min)/60)), 7)
+                    lon = round((float(lon_deg) + (float(lon_min)/60)), 7)
+                    return lat, lon
+            except:
+                timeoutvar +=1
+                if(timeoutvar >= 50000):
+                    break
+                else:
+                    pass
+                
+            
+def checkGPSSat():
+    global uart_gps
+    sat_count = 0
+    timeoutvar = 0
+    while True:
+        gps_data = uart_gps.readline()
+        if(gps_data != 'None'):
+            try:
+                gps_fields = gps_data.decode().split(',')
+                if(gps_fields[0] == '$GNGSA' and gps_fields[1] == 'A' and int(gps_fields[2]) >= 3):
+                    i = 1
+                    while True:
+                        if(gps_fields[2+i] != ''):
+                            sat_count += 1
+                        else:
+                            break
+                        i+=1
+                    return sat_count
+            except:
+                timeoutvar +=1
+                if(timeoutvar >= 50000):
+                    break
+                else:
+                    pass
+    return sat_count
 
-    accel_x = int(accel_x*10000)/10000
-    accel_y = int(accel_y*10000)/10000
-    accel_z = int(accel_z*10000)/10000
-    
-    return accel_x, accel_y, accel_z
-"""
-
-
-"""
 poll_obj = select.poll()
 poll_obj.register(sys.stdin, 1)
-sleep(6)
+sleep(4)
 initialize_pico()
 sleep(2)
 while True:
@@ -151,5 +204,8 @@ while True:
                 print(str(res))
             else:
                 print('No response')
+
+
+
 
 """
