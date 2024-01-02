@@ -22,19 +22,25 @@ def init_pico(accel = False):
 
 def getGPS():
     res = send_cmd('pollGPS ' + '\n')
-    lat = res[1:9]
-    lon = res [11:19]
-    return lat, lon
+    if(res != ''):
+        res = res[1:]
+        res = res[:-1]
+        resarr = res.split(',')
+        print(resarr[0])
+        print(resarr[1])
+        return str(float(resarr[0])), str(float(resarr[1]))
+    else:
+        return str(0), str(0)
 
 def getSatCount():
     return send_cmd('checkGPSSat ' + '\n')
 
 def getMagnetometer():
-    headingvar, i = 0, 0
-    divide = 50
-    for i in range(50):
+    headingvar, heading, i = 0, 0, 0
+    divide = 100
+    for i in range(100):
         heading = send_cmd('readMagnetometer ' + '\n')
-        if(heading!='err'):
+        if(heading!='err' and heading!=''):
             headingvar += float(heading)
         else:
             divide -= 1
@@ -88,5 +94,5 @@ def getAccelVal():
 
 #send_cmd('setServoCycle horizon_servo 4000' + '\n')
 #init_pico()
-#print(getGPS()[1]) 
+#print(getGPS()) 
 #print(getMagnetometer())
