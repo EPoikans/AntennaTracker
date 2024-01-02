@@ -44,15 +44,15 @@ def main():
 	homebutton.grid(row=2, column=0, sticky="w", padx=8, pady=2)
 	homebutton = tk.Radiobutton(mainwindow, text="Ground GPS", variable=home_pos_choice_selected, value=3)
 	homebutton.grid(row=3, column=0, sticky="w", padx=8, pady=2)
-	system_choice_label = tk.Label(mainwindow, text="Select which system or systems to use for obtaining GPS coordinates")
+	system_choice_label = tk.Label(mainwindow)
 	system_choice_label.grid(row=0, column=1, padx=10, pady=2)
 	global system_checkbox_var1
 	system_checkbox_var1 = tk.IntVar()
-	system_checkbox1 = tk.Checkbutton(mainwindow, text="Use OSD for GPS coordinates", variable=system_checkbox_var1)
+	system_checkbox1 = tk.Checkbutton(mainwindow, variable=system_checkbox_var1)
 	system_checkbox1.grid(row=1, column=1, sticky="w", padx=10, pady=5)
 	global system_checkbox_var2
 	system_checkbox_var2 = tk.IntVar()
-	system_checkbox2 = tk.Checkbutton(mainwindow, text="Use Mavlink for GPS coordinates", variable=system_checkbox_var2)
+	system_checkbox2 = tk.Checkbutton(mainwindow, variable=system_checkbox_var2)
 	system_checkbox2.grid(row=2, column=1, sticky="w", padx=10, pady=5)
 	"""
 	global system_checkbox_var3
@@ -60,24 +60,39 @@ def main():
 	system_checkbox3 = tk.Checkbutton(mainwindow, text="Use accelerometer for vertical angle measurements", variable=system_checkbox_var3)
 	system_checkbox3.grid(row=4, column=1, sticky="w", padx=10, pady=5)
 	"""
-	init_button = tk.Button(mainwindow, text="Initialize program", command=initialize)
+	init_button = tk.Button(mainwindow, command=initialize)
 	init_button.grid(row=5,column=0,columnspan=2, pady=5)
-	init_pico = tk.Button(mainwindow, text="Initialize Pico", command=serial_com.init_pico) #No check if done currently!!!!!!!
+	init_pico = tk.Button(mainwindow, command=serial_com.init_pico) #No check if done currently!!!!!!!
 	init_pico.grid(row=6,column=0,columnspan=2, pady=5)
-	mavlink_sample= tk.Button(mainwindow, text="See mavlink sample", command=SampleMavlink)
+	mavlink_sample= tk.Button(mainwindow, command=SampleMavlink)
 	mavlink_sample.grid(row=10,column=1, pady=5)
-	OSD_sample= tk.Button(mainwindow, text="See OSD sample", command=SampleVideo)
+	OSD_sample= tk.Button(mainwindow, command=SampleVideo)
 	OSD_sample.grid(row=12,column=1, pady=5)
 	global error_label
 	error_label = tk.Label(mainwindow, text="")
 	error_label.grid(row=6, column=0, columnspan=2, pady=5)
-	Return_btt= tk.Button(mainwindow, text="Quit", command=lambda: ReturnBttFn(mainwindow))
+	Return_btt= tk.Button(mainwindow, command=lambda: ReturnBttFn(mainwindow))
 	Return_btt.grid(row=20,column=0, pady=5)
 	if(comp_setup=='PC'):
 		home_pos_choice_label.config(text="Select how to obtain home GPS position and compass heading")
-		system_choice_label.config()
+		system_choice_label.config(text="Select which system or systems to use for obtaining GPS coordinates")
+		system_checkbox1.config(text="Use OSD for GPS coordinates")
+		system_checkbox2.config(text="Use Mavlink for GPS coordinates")
+		init_button.config(text="Initialize program")
+		init_pico.config(text="Initialize Pico")
+		mavlink_sample.config(text="See mavlink sample")
+		OSD_sample.config(text="See OSD sample")
+		Return_btt.config(text="Quit")
 	elif(comp_setup=='Raspi'):
-		print("")
+		home_pos_choice_label.config(text="Home GPS")
+		system_choice_label.config(text="Drone GPS")
+		system_checkbox1.config(text="OSD")
+		system_checkbox2.config(text="Mavlink")
+		init_button.config(text="Next")
+		init_pico.config(text="")
+		mavlink_sample.config(text="")
+		OSD_sample.config(text="")
+		Return_btt.config(text="Quit")
 	
 	mainwindow.mainloop()
 
@@ -89,6 +104,7 @@ def initialize():
 	mavlink_for_gps = system_checkbox_var2.get()
 	accelerometer = False #system_checkbox_var3.get()
 	global gps_home_window
+	global coords
 	if(home_gps_select):
 		if(osd_for_gps or mavlink_for_gps):
 			if(home_gps_select == 1):
@@ -98,7 +114,7 @@ def initialize():
 					gps_home_window = tk.Toplevel(mainwindow)
 					gps_home_window.geometry(geometry_res)
 					gps_home_window.title("Await home coordinates")
-					home_label = tk.Label(gps_home_window, text="Arm drone to set home. Awaiting mavlink home set message")
+					home_label = tk.Label(gps_home_window, text="Awaiting mavlink home set message")
 					home_label.grid(row=0,column=0, pady=5)
 					global home_gps_result_mav
 					home_gps_result_mav = tk.Label(gps_home_window, text="No GPS data retrieved")
@@ -107,7 +123,6 @@ def initialize():
 					home_gps_confirm.grid(row=3,column=0, pady=5)
 					Return_btt= tk.Button(gps_home_window, text="Return", command=lambda: ReturnBttFn(gps_home_window))
 					Return_btt.grid_forget()
-					global coords
 					gps_home_window.update_idletasks()
 					mavcoords = mavlink_msg_recieving.await_home_coords(initialize_data.the_connection)
 					coords = [mavcoords[3],mavcoords[4],int(mavcoords[5]), int(mavcoords[2])]
@@ -141,6 +156,29 @@ def initialize():
 			if(home_gps_select == 3):
 				error_label.config(text="")
 				initialize_data.initialize_data(bool(mavlink_for_gps), bool(osd_for_gps), 'GPS', False, accelerometer)
+				if(serial_com.getGPS() != 'No response'):
+					gps_home_window = tk.Toplevel(mainwindow)
+					gps_home_window.geometry(geometry_res)
+					gps_home_window.title("Set home coordinates")
+					home_gps_result_gps = tk.Label(gps_home_window, text="No GPS data retrieved")
+					home_gps_result_gps.grid(row=2,column=0, pady=5)
+					home_gps_confirm = tk.Button(gps_home_window, text="Confirm", command=submitOSDHome)
+					home_gps_confirm.grid(row=3,column=0, pady=5)
+					Return_btt= tk.Button(gps_home_window, text="Return", command=lambda: ReturnBttFn(gps_home_window))
+					Return_btt.grid_forget()
+					gps_home_window.update_idletasks()
+					heading = serial_com.getMagnetometer()
+					latlon = serial_com.getGPS()
+					lat = latlon[0]
+					lon = latlon[1]
+					coords = [lat,lon,0, heading]
+					if(coords!="Timeout"):
+						home_gps_result_gps.config(text=coords)
+					else:
+						home_gps_result_gps.config(text="No home coordinates retrieved")
+					Return_btt.grid(row=20,column=0, pady=5)
+				else:
+					error_label.config(text="No response from GPS module")
 		else:
 			error_label.config(text="Select the method for recieving realtime GPS coordinates")
 	else:

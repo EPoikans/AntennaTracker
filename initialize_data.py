@@ -1,6 +1,8 @@
+import platform
 import cv2
 import numpy as np
 from pymavlink import mavutil
+import ui_window
 
 
 global gpshome
@@ -8,7 +10,15 @@ gpshome = []
 
 def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, accelerometer):
 	global accelerometer_bool
-	accelerometer_bool = bool(accelerometer) 
+	accelerometer_bool = bool(accelerometer)
+	if platform.system().lower() == 'linux':
+		try:
+			import RPi.GPIO as GPIO
+			comp_setup = 'Raspi'
+		except ImportError:
+			comp_setup = 'PC'
+	else:
+		comp_setup = 'PC'
 	if(useOSD):
 		with np.load('knn_data.npz') as data: #Loads training dataset from images
 			train_array = data['train_array']
@@ -31,7 +41,10 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		#	Video feed input data collection
 		#
 		initial = True
-		usesamplevid = True #Used in testing a video recording without flying drone, should be false when field testing
+		if(comp_setup == 'Raspi'):
+			usesamplevid = False #Used in testing a video recording without flying drone, should be false when field testing
+		else:
+			usesamplevid = True
 		global videofeed
 		if(usesamplevid):
 			videofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
@@ -100,7 +113,10 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 	if(useMavlink):
 		connect_adress = 'COM5'
 		testfile = './TestingFiles/2023-09-22 12-26-58.tlog'
-		usetestfile = True #Used for testing without connection to drone using logs like in sample viewing, should be False for actual flights
+		if(comp_setup == 'Raspi'):
+			usetestfile = False #Used for testing without connection to drone using logs like in sample viewing, should be False for actual flights
+		else:
+			usetestfile = True
 		if(usetestfile):
 			usedaddress = testfile
 		else:
