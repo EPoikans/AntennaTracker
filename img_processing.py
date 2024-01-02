@@ -52,7 +52,7 @@ def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, l
 		if not framestatus:
 			raise Exception [False, False, False, False] #On error returns all coords values as false 
 		grayframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		framestatus2, tresholdframe = cv2.threshold(grayframe,245,255,cv2.THRESH_TOZERO) #Removes background
+		framestatus2, tresholdframe = cv2.threshold(grayframe,240,255,cv2.THRESH_TOZERO) #Removes background
 		if not framestatus2:
 			raise Exception [False, False, False, False] #On error returns all coords values as false
 		returnimg = tresholdframe.copy()
@@ -94,7 +94,7 @@ def testvideo(videofeed, boundingbox_arr, videofps, capture_frequency,lat_boundb
 			sample_videofeed_coords.config(text=('No more frames, stopping'))
 			break
 		grayframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		framestatus2, tresholdframe = cv2.threshold(grayframe,245,255,cv2.THRESH_TOZERO) #Removes background
+		framestatus2, tresholdframe = cv2.threshold(grayframe,240,255,cv2.THRESH_TOZERO) #Removes background
 		if not framestatus2:
 			sample_videofeed_coords.config(text=('No more frames, stopping'))
 			break

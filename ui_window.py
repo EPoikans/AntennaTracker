@@ -92,15 +92,17 @@ def main():
 		OSD_sample.config(text="See OSD sample")
 		Return_btt.config(text="Quit")
 	elif(comp_setup=='Raspi'):
-		home_pos_choice_label.config(text="Home GPS")
-		system_choice_label.config(text="Drone GPS")
-		system_checkbox1.config(text="OSD")
-		system_checkbox2.config(text="Mavlink")
-		init_button.config(text="Next")
+		rp_font = font.nametofont("TkDefaultFont")
+		rp_font.configure(size=16)
+		home_pos_choice_label.config(text="Home GPS", font=rp_font)
+		system_choice_label.config(text="Drone GPS", font=rp_font)
+		system_checkbox1.config(text="OSD", font=rp_font)
+		system_checkbox2.config(text="Mavlink", font=rp_font)
+		init_button.config(text="Next", font=rp_font)
 		init_pico.config(text="", state="disabled", bd=0, highlightthickness=0)
 		mavlink_sample.config(text="", state="disabled", bd=0, highlightthickness=0)
 		OSD_sample.config(text="", state="disabled", bd=0, highlightthickness=0)
-		Return_btt.config(text="Quit")
+		Return_btt.config(text="Quit", font=rp_font)
 		Return_btt.grid(row=6)
 		init_button.grid(row=5,column=0, columnspan=3, pady=5)
 		error_label.grid(row=6, column=1, columnspan=2, pady=5)
@@ -283,7 +285,10 @@ def TestVideo(iter_count):
 		testing_window.after(100,lambda: TestVideo(iter_count + 1))
 	else:
 		osd_test_screenshot.config(image=None)
-		endstring = ('Test done, last coordinates -' + str(testcoord[0]) + " " + str(testcoord[1]) +  " " + str(testcoord[2]) + " " + str(testcoord[3]))
+		if(comp_setup == "PC"):
+			endstring = ('Test done, last coordinates -' + str(testcoord[0]) + " " + str(testcoord[1]) +  " " + str(testcoord[2]) + " " + str(testcoord[3]))
+		else:
+			endstring = ('Test done')
 		osd_test_coords.config(text=endstring)
 	
 	
@@ -329,7 +334,10 @@ def TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i,it
 			mavlink_test3.config(text = "No incoming messages")
 			mavlink_test4.config(text = "No incoming messages")
 	else:
-		mavlink_test1.config(text = "Not using Mavlink for GPS")
+		if(comp_setup=='PC'):
+			mavlink_test1.config(text = "Not using Mavlink for GPS")
+		else:
+			mavlink_test1.config(text = "Mavlink err")
 
 def SampleVideo():
 	global samplevideowindow
@@ -396,7 +404,7 @@ def testingWindow():
 	mavlink_test2 = tk.Label(testing_window)
 	mavlink_test3 = tk.Label(testing_window)
 	mavlink_test4 = tk.Label(testing_window)
-	mavlink_test.grid(row=1,column=0, pady=5,)
+	mavlink_test.grid(row=1,column=0, pady=5)
 	mavlink_test1.grid(row=2,column=0, pady=5)
 	mavlink_test2.grid(row=3,column=0, pady=5)
 	mavlink_test3.grid(row=4,column=0, pady=5)
@@ -415,8 +423,20 @@ def testingWindow():
 		mavlink_test.config(text="Test Mavlink incoming messages")
 		osd_test.config(text="Test OSD coordinates and processed feed")
 	else:
+		rp_font = font.nametofont("TkDefaultFont")
+		rp_font.configure(size=11)
+		mavlink_test1.config(font=rp_font)
+		mavlink_test2.config(font=rp_font)
+		mavlink_test3.config(font=rp_font)
+		mavlink_test4.config(font=rp_font)
+		osd_test_coords.config(font=rp_font)
+		mavlink_test.config(font=rp_font)
 		mavlink_test.config(text="Test Mavlink")
+		mavlink_test.grid(padx=65)
+		osd_test.grid(padx=85)
 		osd_test.config(text="Test OSD")
+		Return_btt.grid(pady=45)
+
 
 def ReturnBttFn(window):
 	window.destroy()
