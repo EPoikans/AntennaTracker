@@ -55,13 +55,14 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		global videofeed
 		
 
-		usesamplevid=False #TEMP
+		
+		#usesamplevid=False #TEMP
 		
 		
 		
 		if(usesamplevid):
-			#videofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
-			videofeed = cv2.VideoCapture('./TestingFiles/AvatarG0045_with_osd.mp4')
+			videofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
+			#videofeed = cv2.VideoCapture('./TestingFiles/AvatarG0045_with_osd.mp4')
 			videofps = videofeed.get(cv2.CAP_PROP_FPS)
 			capture_frequency = 1 # analyzed frames per second, 1 recomened
 		else:

@@ -345,7 +345,7 @@ def SampleVideo():
 	samplevideowindow = tk.Toplevel(mainwindow)
 	samplevideowindow.geometry(geometry_res)
 	samplevideowindow.title("Sample video")
-	samplevideofeed = cv2.VideoCapture('./TestingFiles/AvatarG0045_with_osd.mp4')
+	samplevideofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
 	videofps = samplevideofeed.get(cv2.CAP_PROP_FPS)
 	capture_frequency = 1 # analyzed frames per second, 1 recomened
 	global sample_videofeed, sample_videofeed_coords

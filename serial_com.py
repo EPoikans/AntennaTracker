@@ -49,7 +49,7 @@ def getSatCount():
 
 def getMagnetometer():
     heading = send_cmd('readMagnetometer ' + '\n')
-    return str(heading)
+    return int(float(heading))
 
 def setVerticalServo(pwm_freq, pwm_current_estimate):
     if isinstance(pwm_freq, int) or isinstance(pwm_freq, float):
