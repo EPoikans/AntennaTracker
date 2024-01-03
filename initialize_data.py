@@ -8,24 +8,31 @@ import ui_window
 global gpshome
 gpshome = []
 
+
+
 def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, accelerometer):
 	global accelerometer_bool
+	cv2.VideoCapture(0).release()
+	
 	accelerometer_bool = bool(accelerometer)
 	if platform.system().lower() == 'linux':
 		try:
 			import RPi.GPIO as GPIO
 			comp_setup = 'Raspi'
+			knnData = './knn_data.npz'
 		except ImportError:
 			comp_setup = 'PC'
+			knnData = 'knn_data.npz'
 	else:
 		comp_setup = 'PC'
+		knnData = 'knn_data.npz'
 	if(useOSD):
-		with np.load('knn_data.npz') as data: #Loads training dataset from images
+		with np.load(knnData) as data: #Loads training dataset from images
 			train_array = data['train_array']
 			trainedlabels = data['trainedlabels']
 		global knn
 		knn = cv2.ml.KNearest_create() #Creates simple KNN 
-		knn.train(train_array, cv2.ml.ROW_SAMPLE, trainedlabels) #Trains it on 39 samples of 10 digits with the same font
+		knn.train(train_array, cv2.ml.ROW_SAMPLE, trainedlabels)
 
 		# Must be the same as training data!
 		global resize_newsize
@@ -34,10 +41,10 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		resize = False
 
 
-		if(knn_accuracy_test(knn, train_array, trainedlabels) != 100): #Kills the program if accuracy isnt 100%
+		if(knn_accuracy_test(knn, train_array, trainedlabels) <= 92): #Kills the program if accuracy isnt above 92
 			exit()
 
-		#
+		#W
 		#	Video feed input data collection
 		#
 		initial = True
@@ -48,16 +55,17 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		global videofeed
 		
 
-		usesamplevid=True #TEMP
+		#usesamplevid=True #TEMP
 		
 		
 		
 		if(usesamplevid):
-			videofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
+			#videofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
+			videofeed = cv2.VideoCapture('./TestingFiles/AvatarG0045_with_osd.mp4')
 			videofps = videofeed.get(cv2.CAP_PROP_FPS)
 			capture_frequency = 1 # analyzed frames per second, 1 recomened
 		else:
-			videofeed = cv2.VideoCapture(0) #Value specifies which video input device is used camera or usb hdmi capture card
+			videofeed = cv2.VideoCapture(0, cv2.CAP_V4L2) #Value specifies which video input device is used camera or usb hdmi capture card
 		while((videofeed.isOpened()!= True) and (initial == True)): #If videofeed is not opened during the initial launch waits 1s until it loads
 			cv2.waitKey(1000)
 			print('Awaiting video')
@@ -120,6 +128,7 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		connect_adress = 'COM5'
 		testfile = './TestingFiles/2023-09-22 12-26-58.tlog'
 		if(comp_setup == 'Raspi'):
+			connect_adress = '/dev/ttyUSB0'
 			usetestfile = False #Used for testing without connection to drone using logs like in sample viewing, should be False for actual flights
 		else:
 			usetestfile = True

@@ -1,8 +1,8 @@
 import serial_com
 
 def headingchangeFn(heading, endheading_from_home, accelerometer, zeroHeading):
-	headingdiff = zeroHeading - endheading_from_home
-	pwm_headingchange = zeroHeading - heading
+	headingdiff = int(zeroHeading) - int(endheading_from_home)
+	pwm_headingchange = int(zeroHeading) - int(heading)
 	if(abs(headingdiff)>=100):
 		if(headingdiff<0):
 			pwm_current_estimate = 1250
@@ -41,7 +41,7 @@ def anglechangeFn(angle, end_angle, accelerometer):
 	return new_angle
 
 def headingChangeFailsafe(heading, homeheading):
-	headingdiff = homeheading - heading
+	headingdiff = int(homeheading) - int(heading)
 	if(abs(headingdiff)>=100):
 		if(headingdiff<0):
 			pwm_freq = 1250

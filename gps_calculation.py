@@ -1,10 +1,10 @@
 import math
 
 def calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, heading_current, angle_current, drone_alt):
-	lat1 = lat_home*math.pi/180 #Home latitude
-	lat2 = lat_drone*math.pi/180
-	lon1 = lon_home*math.pi/180 #Home longitudeb
-	lon2 = lon_drone*math.pi/180
+	lat1 = float(lat_home)*math.pi/180 #Home latitude
+	lat2 = float(lat_drone)*math.pi/180
+	lon1 = float(lon_home)*math.pi/180 #Home longitudeb
+	lon2 = float(lon_drone)*math.pi/180
 	#Haversine Formula - great-circle distance between two points on a sphere from longitudes and latitudes
 	a = (math.sin((lat2-lat1)/2) ** 2) + math.cos(lat1) * math.cos(lat2) * (math.sin((lon2 - lon1)/2) ** 2)
 	c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))

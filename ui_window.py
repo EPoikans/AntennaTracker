@@ -22,9 +22,9 @@ def main():
 	global comp_setup, geometry_res
 	global mainwindow
 	mainwindow = tk.Tk()
-	if platform.system().lower() == 'windows':
+	if platform.system().lower() == 'linux':
 		try:
-			#import RPi.GPIO as GPIO
+			import RPi.GPIO as GPIO
 			comp_setup = 'Raspi'
 			geometry_res = '480x320'
 			def_font = font.nametofont("TkDefaultFont")
@@ -345,7 +345,7 @@ def SampleVideo():
 	samplevideowindow = tk.Toplevel(mainwindow)
 	samplevideowindow.geometry(geometry_res)
 	samplevideowindow.title("Sample video")
-	samplevideofeed = cv2.VideoCapture('./TestingFiles/drone_feed_test.mp4')
+	samplevideofeed = cv2.VideoCapture('./TestingFiles/AvatarG0045_with_osd.mp4')
 	videofps = samplevideofeed.get(cv2.CAP_PROP_FPS)
 	capture_frequency = 1 # analyzed frames per second, 1 recomened
 	global sample_videofeed, sample_videofeed_coords
@@ -510,8 +510,8 @@ def TrackingLoop():
 				dronecoords_save = drone_coords
 			else:
 				drone_coords = dronecoords_save
-			dronecoords_save[0] = int(dronecoords_save[0]*1000000000)/1000000000
-			dronecoords_save[1] = int(dronecoords_save[1]*1000000000)/1000000000
+			dronecoords_save[0] = (int(dronecoords_save[0]*1000000000))/1000000000
+			dronecoords_save[1] = (int(dronecoords_save[1]*1000000000))/1000000000
 			dronecoords_save[2] = int(dronecoords_save[2])
 			direct_distance, newheading_from_home, new_angle = gps_calculation.calc_gps_distance(gpshome[0], gpshome[1], dronecoords_save[0], dronecoords_save[1], heading, angle, dronecoords_save[2])
 			distancefromhome.config(text="Distance from home - " + str(int(direct_distance)) + " New heading - "+ str(int(newheading_from_home)) + " New angle - " + str(int(new_angle)))

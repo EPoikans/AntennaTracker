@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import initialize_data
 import ui_window
 import concurrent.futures
 from PIL import Image, ImageTk
@@ -17,7 +18,7 @@ def img_to_number(img_frame, resize, resize_newsize, atribute_name, knn):
 		resize_size = (30,30)
 	for i in number_contour:
 		(x,y,w,h) = cv2.boundingRect(i)
-		if w>=5 and (h>= 16):
+		if w>=4 and (h>= 16):
 			good_contour.append(i)
 			good_bounding_boxes.append(cv2.boundingRect(i))
 
@@ -35,16 +36,22 @@ def img_to_number(img_frame, resize, resize_newsize, atribute_name, knn):
 	img_array_resized = np.array(img_array_resized)
 	img_array_resized = img_array_resized.reshape(-1,(int(resize_size[0])*int(resize_size[1]))).astype(np.float32)
 	ret,result,neighbours,dist = knn.findNearest(img_array_resized,k=1)
-	endstring = str(int(result[(len(result)-1)]))
-	i=0
-	for i in range (len(result)-1):
-		endstring = endstring + str(int(result[(len(result)-2-i)]))
-		
-	if(len(result)>=7):
-		endnum = int(endstring)/(10000000)
+	if(result is not None):
+		endstring = str(int(result[(len(result)-1)]))
+		i=0
+		for i in range (len(result)-1):
+			endstring = endstring + str(int(result[(len(result)-2-i)]))
+			
+		if(len(result)>=7):
+			if(len(result)>7):
+				endnum = int(endstring)/(10**(len(result)-2))
+			else:
+				return 0, atribute_name
+		else:
+			endnum = int(endstring) 
+		return endnum, atribute_name
 	else:
-		endnum = int(endstring) 
-	return endnum, atribute_name
+		return 0, atribute_name
 
 def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height, heading_boundbox, heading_width, heading_height, resize, resize_newsize, knn, testosd):
 	try:
@@ -52,7 +59,7 @@ def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, l
 		if not framestatus:
 			raise Exception [False, False, False, False] #On error returns all coords values as false 
 		grayframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		framestatus2, tresholdframe = cv2.threshold(grayframe,240,255,cv2.THRESH_TOZERO) #Removes background
+		framestatus2, tresholdframe = cv2.threshold(grayframe,235,255,cv2.THRESH_TOZERO) #Removes background
 		if not framestatus2:
 			raise Exception [False, False, False, False] #On error returns all coords values as false
 		returnimg = tresholdframe.copy()
@@ -94,7 +101,7 @@ def testvideo(videofeed, boundingbox_arr, videofps, capture_frequency,lat_boundb
 			sample_videofeed_coords.config(text=('No more frames, stopping'))
 			break
 		grayframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		framestatus2, tresholdframe = cv2.threshold(grayframe,240,255,cv2.THRESH_TOZERO) #Removes background
+		framestatus2, tresholdframe = cv2.threshold(grayframe,235,255,cv2.THRESH_TOZERO) #Removes background
 		if not framestatus2:
 			sample_videofeed_coords.config(text=('No more frames, stopping'))
 			break

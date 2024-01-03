@@ -1,9 +1,21 @@
+import platform
 import serial
 import time
 
-serial_port = 'COM10'
 
-baud = 115200
+if platform.system().lower() == 'linux':
+    try:
+        import RPi.GPIO as GPIO
+        serial_port = '/dev/ttyACM0'
+        baud = 115200
+    except ImportError:
+        serial_port = 'COM10'
+        baud = 115200
+else:
+    serial_port = 'COM10'
+    baud = 115200
+
+
 
 def send_cmd(command):
     try:
