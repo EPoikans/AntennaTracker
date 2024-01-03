@@ -455,24 +455,24 @@ def StopTracking():
 def TrackingLoop():
 	global loop_running
 	global osd_for_gps, mavlink_for_gps, gpshome, home_coords
-	osd_lat_sanity = gpshome[0]
-	osd_lon_sanity = gpshome[1]
-	mav_lat_sanity = gpshome[0]
-	mav_lon_sanity = gpshome[1]
+	osd_lat_sanity = float(gpshome[0])
+	osd_lon_sanity = float(gpshome[1])
+	mav_lat_sanity = float(gpshome[0])
+	mav_lon_sanity = float(gpshome[1])
 	sanitycount, osd_sanitycount, mav_sanitycount, lastalt_osd, lastalt_mav = 0, 0, 0, 0, 0
-	heading = gpshome[3]
+	heading = int(gpshome[3])
 	angle = 0
 	if(len(gpshome) == 4):
 		while loop_running:
 			if(osd_for_gps):
 				drone_coords_osd = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, False, False, initialize_data.knn, False)
 				if(drone_coords_osd != [False, False, False, False]):
-					lat_diff = abs(osd_lat_sanity - drone_coords_osd[0])
-					lon_diff = abs(osd_lon_sanity - drone_coords_osd[1])
-					lastalt_osd = drone_coords_osd[2]
+					lat_diff = abs(float(osd_lat_sanity) - float(drone_coords_osd[0]))
+					lon_diff = abs(float(osd_lon_sanity) - float(drone_coords_osd[1]))
+					lastalt_osd = int(drone_coords_osd[2])
 					if(lat_diff <= 0.009 and lon_diff <= 0.009): #About 500m distance change from last coordinate
-						osd_lat_sanity = drone_coords_osd[0]
-						osd_lon_sanity = drone_coords_osd[1]
+						osd_lat_sanity = float(drone_coords_osd[0])
+						osd_lon_sanity = float(drone_coords_osd[1])
 					else:
 						sanitycount+=1
 						
@@ -482,36 +482,36 @@ def TrackingLoop():
 			if(mavlink_for_gps):
 				drone_coords_mav = mavlink_msg_recieving.get_gps_mavlink(initialize_data.the_connection)
 				if(isinstance(drone_coords_mav, np.ndarray)):
-					lat_diff = abs(mav_lat_sanity - drone_coords_mav[3])
-					lon_diff = abs(mav_lon_sanity - drone_coords_mav[4])
-					lastalt_mav = drone_coords_mav[5]
+					lat_diff = abs(float(mav_lat_sanity) - float(drone_coords_mav[3]))
+					lon_diff = abs(float(mav_lon_sanity) - float(drone_coords_mav[4]))
+					lastalt_mav = int(drone_coords_mav[5])
 					if(lat_diff <= 0.01 and lon_diff <= 0.01): #About 1-1.5km distance change from last coordinate
-						mav_lat_sanity = drone_coords_mav[3]
-						mav_lon_sanity = drone_coords_mav[4]
+						mav_lat_sanity = float(drone_coords_mav[3])
+						mav_lon_sanity = float(drone_coords_mav[4])
 					else:
 						sanitycount+=1
 				else:
 					mav_sanitycount+=1
 			if(osd_for_gps and mavlink_for_gps):
 				if(isinstance(drone_coords_mav, np.ndarray) and drone_coords_osd != [False, False, False, False]):
-					drone_coords = [((osd_lat_sanity + mav_lat_sanity)/2),((osd_lon_sanity + mav_lon_sanity)/2), ((lastalt_osd + lastalt_mav)/2)]
+					drone_coords = [float((osd_lat_sanity + mav_lat_sanity)/2),float((osd_lon_sanity + mav_lon_sanity)/2), int((lastalt_osd + lastalt_mav)/2)]
 				elif(isinstance(drone_coords_mav, bool) and drone_coords_osd != [False, False, False, False]):
-					drone_coords = [(osd_lat_sanity),(osd_lon_sanity),(lastalt_osd)]
+					drone_coords = [float(osd_lat_sanity),float(osd_lon_sanity),int(lastalt_osd)]
 				elif(isinstance(drone_coords_mav, np.ndarray) and drone_coords_osd == [False, False, False, False]):
-					drone_coords = [(mav_lat_sanity),(mav_lon_sanity),(lastalt_mav)]
+					drone_coords = [float(mav_lat_sanity),float(mav_lon_sanity),int(lastalt_mav)]
 				else:
 					drone_coords = dronecoords_save
 				dronecoords_save = drone_coords
 			elif(osd_for_gps and not mavlink_for_gps):
-				drone_coords = [(osd_lat_sanity),(osd_lon_sanity),(lastalt_osd)]
+				drone_coords = [float(osd_lat_sanity),float(osd_lon_sanity),int(lastalt_osd)]
 				dronecoords_save = drone_coords
 			elif(mavlink_for_gps and not osd_for_gps):
-				drone_coords = [(mav_lat_sanity),(mav_lon_sanity),(lastalt_mav)]
+				drone_coords = [float(mav_lat_sanity),float(mav_lon_sanity),int(lastalt_mav)]
 				dronecoords_save = drone_coords
 			else:
 				drone_coords = dronecoords_save
-			dronecoords_save[0] = (int(dronecoords_save[0]*1000000000))/1000000000
-			dronecoords_save[1] = (int(dronecoords_save[1]*1000000000))/1000000000
+			dronecoords_save[0] = float((int(dronecoords_save[0]*1000000000))/1000000000)
+			dronecoords_save[1] = float((int(dronecoords_save[1]*1000000000))/1000000000)
 			dronecoords_save[2] = int(dronecoords_save[2])
 			direct_distance, newheading_from_home, new_angle = gps_calculation.calc_gps_distance(gpshome[0], gpshome[1], dronecoords_save[0], dronecoords_save[1], heading, angle, dronecoords_save[2])
 			distancefromhome.config(text="Distance from home - " + str(int(direct_distance)) + " New heading - "+ str(int(newheading_from_home)) + " New angle - " + str(int(new_angle)))

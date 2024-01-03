@@ -48,15 +48,8 @@ def getSatCount():
     return send_cmd('checkGPSSat ' + '\n')
 
 def getMagnetometer():
-    headingvar, heading, i = 0, 0, 0
-    divide = 100
-    for i in range(100):
-        heading = send_cmd('readMagnetometer ' + '\n')
-        if(heading!='err' and heading!=''):
-            headingvar += float(heading)
-        else:
-            divide -= 1
-    return str(int(headingvar/divide))
+    heading = send_cmd('readMagnetometer ' + '\n')
+    return str(heading)
 
 def setVerticalServo(pwm_freq, pwm_current_estimate):
     if isinstance(pwm_freq, int) or isinstance(pwm_freq, float):
@@ -107,4 +100,4 @@ def getAccelVal():
 #send_cmd('setServoCycle horizon_servo 4000' + '\n')
 #init_pico()
 #print(getGPS()) 
-#print(getMagnetometer())
+print(getMagnetometer())

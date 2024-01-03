@@ -15,15 +15,15 @@ def calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, heading_current,
 	o = math.atan2(y,x)
 	newheading_from_home = (o*180/math.pi + 360)%360
 	direct_distance = math.sqrt(drone_alt*drone_alt + d*d)
-	if(direct_distance>=5 and drone_alt >=10):
+	if(direct_distance>=5 and drone_alt >=3):
 		new_angle = math.sin(drone_alt/direct_distance)*180/math.pi
 	elif(drone_alt>=10 and direct_distance<=5):
 		new_angle = math.sin(drone_alt/2)*180/math.pi
-	elif(direct_distance<=5 and drone_alt<=10):
+	elif(direct_distance<=5 and drone_alt<=3):
 		newheading_from_home = heading_current
 		new_angle = angle_current
 	else:
-		new_angle = 20
-	if(new_angle <= 15):
-		new_angle = 15
+		new_angle = 10
+	if(new_angle <= 5):
+		new_angle = 5
 	return direct_distance, newheading_from_home, new_angle

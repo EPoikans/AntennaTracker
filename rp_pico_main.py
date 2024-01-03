@@ -12,15 +12,16 @@ compass_reg = { #QMC5883L
     "MAGNETO_ID": 0xFF,
     "MAGNETO_ID_ADD": 0xD,
     "CONTROLREG1": 0x09,
-    "CONTROLREG2": 0xA,
+    "CONTROLREG2": 0x0A,
     "DATAREG": 0x00,
-    "DATACONV": 100.0 / 3000.0, #Convert LSb to uT (microtesla) +/-8Gauss field range - 3000 LSb/Gauss
+    "DATACONV": 100.0 / 3000.0 #+/-2Gauss field range - 12000 LSb/Gauss
 }
 
 def initialize_pico(accelerometer = False):  
     global state, vertservo, horizonservo, i2c, uart_gps
     i2c = I2C(1, scl=Pin(19), sda=Pin(18), freq=400000)
     uart_gps = UART(0, baudrate=115200, tx=Pin(16), rx=Pin(17))
+    
     if compass_reg["MAGNETO_ADDRESS"] in i2c.scan():
         i2c.writeto_mem(compass_reg["MAGNETO_ADDRESS"], compass_reg['CONTROLREG1'], bytes([0x1D]))
     vertservo = PWM(Pin(5))
@@ -36,26 +37,29 @@ def initialize_pico(accelerometer = False):
 def readMagnetometer():
     global i2c
     try:
-        data=i2c.readfrom_mem(compass_reg["MAGNETO_ADDRESS"], compass_reg["DATAREG"], 8)
-        x = ((data[0] << 8) | data[1])
-        z = ((data[2] << 8) | data[3])
-        y = ((data[4] << 8) | data[5])
+        data=i2c.readfrom_mem(compass_reg["MAGNETO_ADDRESS"], compass_reg["DATAREG"], 6)
+        x = ((data[1] << 8) | data[0])
+        y = ((data[3] << 8) | data[2])
+        z = ((data[5] << 8) | data[4])
         if x > 32767:
             x -= 65536
         if y > 32767:
             y -= 65536
         if z > 32767:
             z -= 65536
-        x=x*compass_reg["DATACONV"]
-        y=y*compass_reg["DATACONV"]
-        z=z*compass_reg["DATACONV"]
-        heading = math.atan2(y, x) * 180 / math.pi
-        day = 1 #January 1st
+        x=(x)*compass_reg["DATACONV"]
+        x = x-136
+        y=(y)*compass_reg["DATACONV"]
+        y = y - 50
+        z=(z)*compass_reg["DATACONV"]
+        heading = math.atan2(y, x)
+        heading = math.degrees(heading)
+        day = 1
         declination_angle = math.sin(((-23.45)*math.pi/180) * math.cos(360/365 * (day + 10)))
         heading += declination_angle
         if heading < 0:
             heading += 360
-        sleep(0.01)
+        print("Magnetic field in X: %.2f uT, Y: %.2f uT, Z: %.2f uT, Heading: %.2f°" % (x, y, z, heading))
         return heading
     except:
         return ('err')
@@ -122,8 +126,8 @@ $ - begining of message
 
 $GNGSA - active sattelite count
 $GNGLL - lat and lon 
-"""
 
+"""
 """
 
 def pollGPS():
@@ -204,7 +208,6 @@ while True:
                 print(str(res))
             else:
                 print('No response')
-
 
 
 

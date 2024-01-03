@@ -19,7 +19,7 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		try:
 			import RPi.GPIO as GPIO
 			comp_setup = 'Raspi'
-			knnData = './knn_data.npz'
+			knnData = '/home/pi/Desktop/AntennaTracker/knn_data.npz'
 		except ImportError:
 			comp_setup = 'PC'
 			knnData = 'knn_data.npz'
@@ -55,7 +55,7 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		global videofeed
 		
 
-		#usesamplevid=True #TEMP
+		usesamplevid=False #TEMP
 		
 		
 		
@@ -65,7 +65,7 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 			videofps = videofeed.get(cv2.CAP_PROP_FPS)
 			capture_frequency = 1 # analyzed frames per second, 1 recomened
 		else:
-			videofeed = cv2.VideoCapture(0, cv2.CAP_V4L2) #Value specifies which video input device is used camera or usb hdmi capture card
+			videofeed = cv2.VideoCapture(0)#, cv2.CAP_V4L2) #Value specifies which video input device is used camera or usb hdmi capture card
 		while((videofeed.isOpened()!= True) and (initial == True)): #If videofeed is not opened during the initial launch waits 1s until it loads
 			cv2.waitKey(1000)
 			print('Awaiting video')
