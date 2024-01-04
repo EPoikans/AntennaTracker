@@ -71,7 +71,7 @@ def main():
 	init_button = tk.Button(mainwindow, command=initialize)
 	init_button.grid(row=5,column=0,columnspan=2, pady=5)
 	init_pico = tk.Button(mainwindow, command=serial_com.init_pico) #No check if done currently!!!!!!!
-	init_pico.grid(row=6,column=0,columnspan=2, pady=5)
+	init_pico.grid(row=7,column=0,columnspan=2, pady=5)
 	mavlink_sample= tk.Button(mainwindow, command=SampleMavlink)
 	mavlink_sample.grid(row=10,column=1, pady=5)
 	OSD_sample= tk.Button(mainwindow, command=SampleVideo)
@@ -176,18 +176,20 @@ def initialize():
 					gps_home_window.geometry(geometry_res)
 					gps_home_window.title("Set home coordinates")
 					home_label = tk.Label(gps_home_window)
-					home_label.grid(row=0,column=0, pady=5)
-					home_gps_button = tk.Button(gps_home_window, text="Get data", command=OSDHomePos)
-					home_gps_button.grid(row=1,column=0, pady=5)
+					home_label.grid(row=0,column=0, pady=15)
+					home_gps_button = tk.Button(gps_home_window, text="Get data", command=OSDHomePos, font=(font.nametofont("TkDefaultFont"), 26), bd=3)
+					home_gps_button.grid(row=1,column=0, pady=15)
 					global home_gps_result
 					home_gps_result = tk.Label(gps_home_window, text="No GPS data retrieved")
-					home_gps_result.grid(row=2,column=0, pady=5)
-					home_gps_confirm = tk.Button(gps_home_window, text="Confirm", command=submitOSDHome)
-					home_gps_confirm.grid(row=3,column=0, pady=5)
-					Return_btt= tk.Button(gps_home_window, text="Return", command=lambda: ReturnBttFn(gps_home_window))
-					Return_btt.grid(row=20,column=0, pady=5)
+					home_gps_result.grid(row=2,column=0, pady=15)
+					home_gps_confirm = tk.Button(gps_home_window, text="Confirm", command=submitOSDHome, font=(font.nametofont("TkDefaultFont"), 26), bd=3)
+					home_gps_confirm.grid(row=3,column=0, pady=15)
+					Return_btt= tk.Button(gps_home_window, text="Return", command=lambda: ReturnBttFn(gps_home_window), font=(font.nametofont("TkDefaultFont"), 26), bd=3)
+					Return_btt.grid(row=20,column=0, pady=25)
 					if(comp_setup == 'PC'):
-						home_label.config(text="Set current drone GPS coordinates and heading as ground station")
+						home_label.config(text="Set current drone GPS coordinates and heading as ground station", font=(font.nametofont("TkDefaultFont"), 18))
+						home_label.grid(padx=50)
+						home_gps_result.config(font=(font.nametofont("TkDefaultFont"), 16), relief=tk.SUNKEN, bd=2)
 					else:
 						home_label.config(text="Drone atitude == Station atitude", font=(font.nametofont("TkDefaultFont"), 20))
 						home_gps_button.config(font=(font.nametofont("TkDefaultFont"), 20), bd=8, relief=tk.RAISED)
@@ -366,7 +368,7 @@ def SampleMavlink():
 	the_connection_sample = mavutil.mavlink_connection('./TestingFiles/2023-09-22 12-26-58.tlog')
 	the_connection_sample.wait_heartbeat()
 	global mavlink_sample1, mavlink_sample2, mavlink_sample3, mavlink_sample4
-	mavlink_sampletitle = tk.Label(sampleMavlinkWindow, text="1. time from boot 2. compass heading val 3. GPS heading val 4. GPS lat, 5. GPS lon 6. GPS relative altitude 7. GPS fix type 8. locked sattelite count")
+	mavlink_sampletitle = tk.Label(sampleMavlinkWindow, text="1. time from boot 2. compass heading val 3. GPS heading val 4. GPS lat, 5. GPS lon 6. GPS relative altitude 7. GPS fix type 8. locked sattelite count", font=(font.nametofont("TkDefaultFont"), 9))
 	mavlink_sample1 = tk.Label(sampleMavlinkWindow, wraplength=780)
 	mavlink_sample2 = tk.Label(sampleMavlinkWindow, wraplength=780)
 	mavlink_sample3 = tk.Label(sampleMavlinkWindow, wraplength=780)
@@ -384,7 +386,7 @@ def SampleMavlink():
 def OSDHomePos():
 	global coords
 	coords = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, initialize_data.knn, False)
-	home_gps_result.config(text=(coords))
+	home_gps_result.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[2]) + "  Altitude - " + str(coords[3])))
 
 def submitOSDHome():
 	global gpshome
@@ -580,9 +582,9 @@ def workingWindow():
 		home_coords.config(text=("Home coordinates - Null"))
 	home_coords.grid(row=2,column=0, columnspan=3, pady=5)
 	distancefromhome = tk.Label(workWindow)
-	distancefromhome.grid(row=3,column=3, pady=5)
+	distancefromhome.grid(row=3,column=0, columnspan=3, pady=5)
 	dronecoord = tk.Label(workWindow)
-	dronecoord.grid(row=4,column=3, pady=5)
+	dronecoord.grid(row=4,column=0, columnspan=3, pady=5)
 	Start_btt= tk.Button(workWindow, command=StartTracking)
 	Start_btt.grid(row=8,column=0, pady=5)
 	Stop_btt= tk.Button(workWindow, command=StopTracking)
@@ -593,8 +595,8 @@ def workingWindow():
 	Failsafe_btt.grid(row=8,column=2, pady=5)
 	Failsafestop_btt= tk.Button(workWindow, command=StopTrackingFailsafe)
 	Failsafestop_btt.grid(row=9,column=2, pady=5)
-	Halt_btt= tk.Button(workWindow, command=HaltTracker)
-	Halt_btt.grid(row=10,column=3, pady=5)
+	Halt_btt= tk.Button(workWindow, command=HaltTracker, bd=8, relief=tk.RAISED, font=(font.nametofont("TkDefaultFont"), 25))
+	Halt_btt.grid(row=11,column=2, pady=5)
 	Return_btt= tk.Button(workWindow, text="Return", command=lambda: ReturnBttFn(workWindow))
 	Return_btt.grid(row=15,column=0, pady=50)
 	if(comp_setup == 'PC'):

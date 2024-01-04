@@ -100,4 +100,4 @@ def getAccelVal():
 #send_cmd('setServoCycle horizon_servo 4000' + '\n')
 #init_pico()
 #print(getGPS()) 
-print(getMagnetometer())
+#print(getMagnetometer())

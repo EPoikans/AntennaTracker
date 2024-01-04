@@ -49,6 +49,8 @@ def alternate_calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, headin
 		sinSigma = math.sqrt(((math.cos(u2)*math.sin(λ))**2)+(((math.cos(u1)*math.sin(u2))-(math.sin(u1)*math.cos(u2)*math.cos(λ)))**2))
 		cosSigma = math.sin(u1)*math.sin(u2) + math.cos(u1)*math.cos(u2)*math.cos(λ)
 		sigma = math.atan2(sinSigma, cosSigma)
+		if(sinSigma == 0):
+			sinSigma = 1e-15
 		sinAlfa = (math.cos(u1)*math.cos(u2)*math.sin(λ))/sinSigma
 		cosSqrAlfa = (1 - (sinAlfa**2))
 		cos2SigmaM = cosSigma - ((2*math.sin(u1)*math.sin(u2))/cosSqrAlfa)
