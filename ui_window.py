@@ -513,7 +513,7 @@ def TrackingLoop():
 			dronecoords_save[0] = float((int(dronecoords_save[0]*1000000000))/1000000000)
 			dronecoords_save[1] = float((int(dronecoords_save[1]*1000000000))/1000000000)
 			dronecoords_save[2] = int(dronecoords_save[2])
-			direct_distance, newheading_from_home, new_angle = gps_calculation.calc_gps_distance(gpshome[0], gpshome[1], dronecoords_save[0], dronecoords_save[1], heading, angle, dronecoords_save[2])
+			direct_distance, newheading_from_home, new_angle = gps_calculation.alternate_calc_gps_distance(gpshome[0], gpshome[1], dronecoords_save[0], dronecoords_save[1], heading, angle, dronecoords_save[2])
 			distancefromhome.config(text="Distance from home - " + str(int(direct_distance)) + " New heading - "+ str(int(newheading_from_home)) + " New angle - " + str(int(new_angle)))
 			dronecoord.config(text="Drone coordinates - " + str(dronecoords_save))
 			workWindow.after(50)
