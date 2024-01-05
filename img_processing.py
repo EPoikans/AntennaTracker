@@ -4,6 +4,7 @@ import initialize_data
 import ui_window
 import concurrent.futures
 from PIL import Image, ImageTk
+import preload_knn
 
 def img_to_number(img_frame, resize, resize_newsize, atribute_name, knn):
 	number_contour = cv2.findContours(img_frame.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

@@ -10,7 +10,7 @@ img_data = []
 
 #Settings for testing run speeds on different img sizes and visualize progress in a window
 resize_newsize = (20,20) #Default pictures are 30x30 px
-resize = False
+resize = True
 show_img_examples = False
 
 for i in range(picnum):

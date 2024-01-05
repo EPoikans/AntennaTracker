@@ -102,7 +102,10 @@ def exec_cmd(command):
     elif fnname == "checkGPSSat":
         sat_count = checkGPSSat()
         return sat_count
-
+    elif fnname == "PortCheck":
+        portconfirm = "RPPico"
+        return portconfirm
+		
 """
 """
 NMEA 0183 messages

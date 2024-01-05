@@ -2,19 +2,38 @@ import platform
 import serial
 import time
 
+def findSerialPort(system):
+    if(system == 'linux' or system == 'raspberrypi'):
+        portstart = "/dev/ttyACM"
+    elif(system == 'windows'):
+        portstart = "COM"
+    i=0
+    for i in range(256):
+        serial_port = (str(portstart) + str(i))
+        try:
+            with serial.Serial(serial_port, 115200, timeout=2) as ser:
+                msg = ('PortCheck ' + '\n')
+                ser.write(msg.encode())
+                time.sleep(1)
+                response = ser.readline().decode().strip()
+                if(response == "RPPico"):
+                    return serial_port
+        except:
+            pass
+    return ("Port not found")
 
 if platform.system().lower() == 'linux':
     try:
         import RPi.GPIO as GPIO
-        serial_port = '/dev/ttyACM0'
+        serial_port = findSerialPort("raspberrypi")
         baud = 115200
     except ImportError:
-        serial_port = 'COM10'
+        serial_port = findSerialPort("linux")
         baud = 115200
 else:
-    serial_port = 'COM10'
+    serial_port = findSerialPort("windows")
+    print(serial_port)
     baud = 115200
-
 
 
 def send_cmd(command, sleeptime):
@@ -23,7 +42,7 @@ def send_cmd(command, sleeptime):
             ser.write(command.encode())
             time.sleep(sleeptime)
             response = ser.readline().decode().strip()
-            print(f"Sent: {command}Received: {response}")
+            #print(f"Sent: {command}Received: {response}")
             return response
     except Exception as e:
         print(f"Error: {e}")

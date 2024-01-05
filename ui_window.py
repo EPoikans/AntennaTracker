@@ -16,6 +16,7 @@ from pymavlink import mavutil
 import servo_change
 import serial_com
 import platform
+import preload_knn
 
 
 def main():
@@ -113,6 +114,7 @@ def main():
 	mainwindow.mainloop()
 
 def initialize():
+	global home_gps_select
 	home_gps_select = home_pos_choice_selected.get()
 	global osd_for_gps
 	osd_for_gps = system_checkbox_var1.get()
@@ -275,7 +277,7 @@ def GetGPS():
 	gps_home_window.update_idletasks()
 
 def TestVideo(iter_count):
-	testcoord, img = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, initialize_data.knn, True)
+	testcoord, img = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, preload_knn.knn, True)
 	if(testcoord!=[False, False, False, False] and isinstance(img, Iterable)):
 		osd_test_coords.config(text=testcoord)
 		img_rgb = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
@@ -361,7 +363,7 @@ def SampleVideo():
 	sample_videofeed_coords.grid(row=1,column=0)
 	Return_btt= tk.Button(samplevideowindow, text="Return", command=lambda: ReturnBttFn(samplevideowindow))
 	Return_btt.grid_forget()
-	img_processing.testvideo(samplevideofeed, initialize_data.boundingbox_arr, videofps, capture_frequency,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, initialize_data.knn, sample_videofeed_coords, sample_videofeed, samplevideowindow )
+	img_processing.testvideo(samplevideofeed, initialize_data.boundingbox_arr, videofps, capture_frequency,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, preload_knn.knn, sample_videofeed_coords, sample_videofeed, samplevideowindow )
 	Return_btt.grid(row=1,column=1)
 
 def SampleMavlink():
@@ -389,7 +391,7 @@ def SampleMavlink():
 
 def OSDHomePos():
 	global coords
-	coords = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, initialize_data.knn, False)
+	coords = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, preload_knn.knn, False)
 	home_gps_result.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[2]) + "  Altitude - " + str(coords[3])))
 
 def submitOSDHome():
@@ -462,25 +464,36 @@ def StopTracking():
 
 def TrackingLoop():
 	global loop_running
+	global home_gps_select
 	global osd_for_gps, mavlink_for_gps, gpshome, home_coords
-	osd_lat_sanity = float(gpshome[0])
-	osd_lon_sanity = float(gpshome[1])
-	mav_lat_sanity = float(gpshome[0])
-	mav_lon_sanity = float(gpshome[1])
+	if(home_gps_select == 1 or home_gps_select == 2):
+		osd_lat_sanity = float(gpshome[0])
+		osd_lon_sanity = float(gpshome[1])
+		mav_lat_sanity = float(gpshome[0])
+		mav_lon_sanity = float(gpshome[1])
+		skipfirstosd, skipfirstmav = 0, 0
+	else:
+		osd_lat_sanity = 0
+		osd_lon_sanity = 0
+		mav_lat_sanity = 0
+		mav_lon_sanity = 0
+		skipfirstosd, skipfirstmav = 1, 1
 	sanitycount, osd_sanitycount, mav_sanitycount, lastalt_osd, lastalt_mav = 0, 0, 0, 0, 0
 	heading = int(gpshome[3])
 	angle = 0
 	if(len(gpshome) == 4):
 		while loop_running:
 			if(osd_for_gps):
-				drone_coords_osd = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, False, False, initialize_data.knn, False)
+				drone_coords_osd = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, False, False, preload_knn.knn, False)
 				if(drone_coords_osd != [False, False, False, False]):
 					lat_diff = abs(float(osd_lat_sanity) - float(drone_coords_osd[0]))
 					lon_diff = abs(float(osd_lon_sanity) - float(drone_coords_osd[1]))
 					lastalt_osd = int(drone_coords_osd[2])
-					if(lat_diff <= 0.009 and lon_diff <= 0.009): #About 500m distance change from last coordinate
+					if((lat_diff <= 0.009 and lon_diff <= 0.009) or skipfirstosd == 1): #About 500m distance change from last coordinate
 						osd_lat_sanity = float(drone_coords_osd[0])
 						osd_lon_sanity = float(drone_coords_osd[1])
+						if(skipfirstosd == 1):
+							skipfirstosd +=1
 					else:
 						sanitycount+=1
 						
@@ -493,9 +506,11 @@ def TrackingLoop():
 					lat_diff = abs(float(mav_lat_sanity) - float(drone_coords_mav[3]))
 					lon_diff = abs(float(mav_lon_sanity) - float(drone_coords_mav[4]))
 					lastalt_mav = int(drone_coords_mav[5])
-					if(lat_diff <= 0.01 and lon_diff <= 0.01): #About 1-1.5km distance change from last coordinate
+					if((lat_diff <= 0.01 and lon_diff <= 0.01) or skipfirstmav == 1): #About 1-1.5km distance change from last coordinate
 						mav_lat_sanity = float(drone_coords_mav[3])
 						mav_lon_sanity = float(drone_coords_mav[4])
+						if(skipfirstmav == 1):
+							skipfirstmav +=1
 					else:
 						sanitycount+=1
 				else:
