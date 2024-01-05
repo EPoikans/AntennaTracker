@@ -43,25 +43,25 @@ def main():
 	mainwindow.geometry(geometry_res)
 	mainwindow.title("AntennaTracker")
 	home_pos_choice_label = tk.Label(mainwindow)
-	home_pos_choice_label.grid(row=0, column=0, padx=10, pady=2)
+	home_pos_choice_label.grid(row=0, column=0, padx=20, pady=15)
 	global home_pos_choice_selected
 	home_pos_choice_selected = tk.IntVar()
 	homebutton = tk.Radiobutton(mainwindow, text="Mavlink home", variable=home_pos_choice_selected, value=1)
-	homebutton.grid(row=1, column=0, sticky="w", padx=8, pady=2)
+	homebutton.grid(row=1, column=0, sticky="w", padx=20, pady=2)
 	homebutton = tk.Radiobutton(mainwindow, text="OSD home", variable=home_pos_choice_selected, value=2)
-	homebutton.grid(row=2, column=0, sticky="w", padx=8, pady=2)
+	homebutton.grid(row=2, column=0, sticky="w", padx=20, pady=2)
 	homebutton = tk.Radiobutton(mainwindow, text="Ground GPS", variable=home_pos_choice_selected, value=3)
-	homebutton.grid(row=3, column=0, sticky="w", padx=8, pady=2)
+	homebutton.grid(row=3, column=0, sticky="w", padx=20, pady=2)
 	system_choice_label = tk.Label(mainwindow)
-	system_choice_label.grid(row=0, column=1, padx=10, pady=2)
+	system_choice_label.grid(row=0, column=1, padx=20, pady=2)
 	global system_checkbox_var1
 	system_checkbox_var1 = tk.IntVar()
 	system_checkbox1 = tk.Checkbutton(mainwindow, variable=system_checkbox_var1)
-	system_checkbox1.grid(row=1, column=1, sticky="w", padx=10, pady=5)
+	system_checkbox1.grid(row=1, column=1, sticky="w", padx=20, pady=5)
 	global system_checkbox_var2
 	system_checkbox_var2 = tk.IntVar()
 	system_checkbox2 = tk.Checkbutton(mainwindow, variable=system_checkbox_var2)
-	system_checkbox2.grid(row=2, column=1, sticky="w", padx=10, pady=5)
+	system_checkbox2.grid(row=2, column=1, sticky="w", padx=20, pady=5)
 	"""
 	global system_checkbox_var3
 	system_checkbox_var3 = tk.IntVar()
@@ -69,7 +69,7 @@ def main():
 	system_checkbox3.grid(row=4, column=1, sticky="w", padx=10, pady=5)
 	"""
 	init_button = tk.Button(mainwindow, command=initialize)
-	init_button.grid(row=5,column=0,columnspan=2, pady=5)
+	init_button.grid(row=5,column=0,columnspan=2, pady=35)
 	init_pico = tk.Button(mainwindow, command=serial_com.init_pico) #No check if done currently!!!!!!!
 	init_pico.grid(row=7,column=0,columnspan=2, pady=5)
 	mavlink_sample= tk.Button(mainwindow, command=SampleMavlink)
@@ -83,7 +83,7 @@ def main():
 	Return_btt.grid(row=20,column=0, pady=5)
 	if(comp_setup=='PC'):
 		home_pos_choice_label.config(text="Select how to obtain home GPS position and compass heading")
-		system_choice_label.config(text="Select which system or systems to use for obtaining GPS coords")
+		system_choice_label.config(text="Select which system(s) to use for obtaining GPS coords")
 		system_checkbox1.config(text="Use OSD for GPS coordinates")
 		system_checkbox2.config(text="Use Mavlink for GPS coordinates")
 		init_button.config(text="Initialize program")
@@ -132,7 +132,7 @@ def initialize():
 					gps_home_window.geometry(geometry_res)
 					gps_home_window.title("Await home coordinates")
 					home_label = tk.Label(gps_home_window)
-					home_label.grid(row=0,column=0, pady=5)
+					home_label.grid(row=0,column=0, pady=5,padx=200)
 					global home_gps_result_mav
 					home_gps_result_mav = tk.Label(gps_home_window, text="No GPS data retrieved")
 					home_gps_result_mav.grid(row=2,column=0, pady=5)
@@ -143,8 +143,12 @@ def initialize():
 					gps_home_window.update_idletasks()
 					mavcoords = mavlink_msg_recieving.await_home_coords(initialize_data.the_connection)
 					coords = [mavcoords[3],mavcoords[4],int(mavcoords[5]), int(mavcoords[2])]
+					Return_btt.grid()
 					if(comp_setup == 'PC'):
-						home_label.config(text="Awaiting mavlink home set message")
+						home_label.config(text="Await mavlink home set message", font=(font.nametofont("TkDefaultFont"), 18))
+						home_gps_result_mav.config(font=(font.nametofont("TkDefaultFont"), 16), relief=tk.SUNKEN, bd=2)
+						Return_btt.config(font=(font.nametofont("TkDefaultFont"), 16), bd=2, relief=tk.RAISED)
+						home_gps_confirm.config(font=(font.nametofont("TkDefaultFont"), 16), bd=2, relief=tk.RAISED)
 					else:
 						home_label.config(text="Await Mavlink Home", font=(font.nametofont("TkDefaultFont"), 20))
 						home_gps_result_mav.config(font=(font.nametofont("TkDefaultFont"), 20),bd=3, relief=tk.SUNKEN)
@@ -156,7 +160,7 @@ def initialize():
 						Return_btt.grid(row=20,column=0, padx=40,pady=3)
 						Return_btt.grid(row=20,column=0, pady=5)
 					if(coords!="Timeout"):
-						home_gps_result_mav.config(text=coords)
+						home_gps_result_mav.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[2]) + "  Altitude - " + str(coords[3])))
 					else:
 						if(comp_setup == 'PC'):
 							home_gps_result_mav.config(text="Home set message not recieved in time, return and try again")
@@ -422,6 +426,8 @@ def testingWindow():
 	Return_btt= tk.Button(testing_window, text="Return", command=lambda: ReturnBttFn(testing_window))
 	Return_btt.grid(row=15,column=0, pady=5)
 	if(comp_setup == 'PC'):
+		mavlink_test.grid(padx=100)
+		Return_btt.grid(pady=100)
 		mavlink_test.config(text="Test Mavlink incoming messages")
 		osd_test.config(text="Test OSD coordinates and processed feed")
 	else:
@@ -570,7 +576,7 @@ def workingWindow():
 	workWindow.geometry(geometry_res)
 	workWindow.title("Tracking")
 	testing_win= tk.Button(workWindow, text="Test OSD coordinates and Mavlink processed feed", command=testingWindow)
-	testing_win.grid(row=10,column=0, pady=50)
+	testing_win.grid(row=11,column=0, pady=50, padx=30)
 	global home_coords, distancefromhome,dronecoord 
 	home_coords = tk.Label(workWindow)
 	if(gpshome):
@@ -588,13 +594,13 @@ def workingWindow():
 	Start_btt= tk.Button(workWindow, command=StartTracking)
 	Start_btt.grid(row=8,column=0, pady=5)
 	Stop_btt= tk.Button(workWindow, command=StopTracking)
-	Stop_btt.grid(row=8,column=1, pady=5)
+	Stop_btt.grid(row=9,column=0, pady=5)
 	Failsafe_Label = tk.Label(workWindow, )
-	Failsafe_Label.grid(row=7,column=2, columnspan= 2, pady=5)
+	Failsafe_Label.grid(row=8,column=2, columnspan= 2, pady=5)
 	Failsafe_btt= tk.Button(workWindow, command=lambda: StartFailsafeTracking(gpshome[3], 40))
-	Failsafe_btt.grid(row=8,column=2, pady=5)
+	Failsafe_btt.grid(row=9,column=2, pady=5)
 	Failsafestop_btt= tk.Button(workWindow, command=StopTrackingFailsafe)
-	Failsafestop_btt.grid(row=9,column=2, pady=5)
+	Failsafestop_btt.grid(row=10,column=2, pady=5)
 	Halt_btt= tk.Button(workWindow, command=HaltTracker, bd=8, relief=tk.RAISED, font=(font.nametofont("TkDefaultFont"), 25))
 	Halt_btt.grid(row=11,column=2, pady=5)
 	Return_btt= tk.Button(workWindow, text="Return", command=lambda: ReturnBttFn(workWindow))

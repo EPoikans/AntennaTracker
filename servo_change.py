@@ -1,14 +1,33 @@
 import serial_com
 
 def headingchangeFn(heading, endheading_from_home, accelerometer, zeroHeading):
-	headingdiff = int(zeroHeading) - int(endheading_from_home)
-	pwm_headingchange = int(zeroHeading) - int(heading)
-	if(abs(headingdiff)>=100):
+	if(zeroHeading >=260):
+		headingOverflow = 360-zeroHeading
+		if(endheading_from_home >= 0 and endheading_from_home <= headingOverflow):
+			endheading_from_home+=360
+	if(zeroHeading <=100):
+		headingOverflow = 360+zeroHeading-100
+		if(endheading_from_home<=360 and endheading_from_home >= headingOverflow):
+			endheading_from_home-=360
+
+	headingdiff = (int(zeroHeading) - int(endheading_from_home))*(-1)
+	pwm_headingchange = (int(zeroHeading) - int(heading))*(-1)
+	#print(zeroHeading, endheading_from_home, pwm_headingchange, headingOverflow, headingdiff)
+	if(abs(headingdiff)>=100 and abs(headingdiff)<=180):
 		if(headingdiff<0):
 			pwm_current_estimate = 1250
 			pwm_freq = 1250
 			serial_com.setHorizontalServo(pwm_freq, pwm_current_estimate)
 		elif(headingdiff>=0):
+			pwm_current_estimate = 8750
+			pwm_freq = 8750
+			serial_com.setHorizontalServo(pwm_freq, pwm_current_estimate)
+	elif(abs(headingdiff)>=180):
+		if(headingdiff>0):
+			pwm_current_estimate = 1250
+			pwm_freq = 1250
+			serial_com.setHorizontalServo(pwm_freq, pwm_current_estimate)
+		elif(headingdiff<=0):
 			pwm_current_estimate = 8750
 			pwm_freq = 8750
 			serial_com.setHorizontalServo(pwm_freq, pwm_current_estimate)

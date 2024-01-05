@@ -17,13 +17,13 @@ else:
 
 
 
-def send_cmd(command):
+def send_cmd(command, sleeptime):
     try:
         with serial.Serial(serial_port, baud, timeout=2) as ser:
             ser.write(command.encode())
-            time.sleep(0.05)
+            time.sleep(sleeptime)
             response = ser.readline().decode().strip()
-            #print(f"Sent: {command}Received: {response}")
+            print(f"Sent: {command}Received: {response}")
             return response
     except Exception as e:
         print(f"Error: {e}")
@@ -33,22 +33,22 @@ def init_pico(accel = False):
     send_cmd('initialize_pico '+ str(accel) + '\n')
 
 def getGPS():
-    res = send_cmd('pollGPS ' + '\n')
+    res = send_cmd('pollGPS ' + '\n', 0.3)
     if(res != ''):
         res = res[1:]
         res = res[:-1]
         resarr = res.split(',')
-        print(resarr[0])
-        print(resarr[1])
+        #print(resarr[0])
+        #print(resarr[1])
         return str(float(resarr[0])), str(float(resarr[1]))
     else:
         return str(0), str(0)
 
 def getSatCount():
-    return send_cmd('checkGPSSat ' + '\n')
+    return send_cmd('checkGPSSat ' + '\n', 0.3)
 
 def getMagnetometer():
-    heading = send_cmd('readMagnetometer ' + '\n')
+    heading = send_cmd('readMagnetometer ' + '\n', 0.05)
     return int(float(heading))
 
 def setVerticalServo(pwm_freq, pwm_current_estimate):
@@ -58,19 +58,19 @@ def setVerticalServo(pwm_freq, pwm_current_estimate):
             i=1
             for i in range(int(pwm_diff/25)):
                 if(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/25)))) >= int(pwm_freq)):
-                    send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n')
+                    send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n', 0.01)
                     break
-                send_cmd('setServoCycle vert_servo '+ str(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/25))))) + '\n')
+                send_cmd('setServoCycle vert_servo '+ str(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/25))))) + '\n', 0.01)
         elif(pwm_freq < pwm_current_estimate):
             pwm_diff = pwm_current_estimate - pwm_freq
             i=1
             for i in range(int(pwm_diff/25)):
                 if(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/25)))) >= int(pwm_freq)):
-                    send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n')
+                    send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n', 0.01)
                     break
-                send_cmd('setServoCycle vert_servo '+ str(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/25))))) + '\n')
+                send_cmd('setServoCycle vert_servo '+ str(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/25))))) + '\n', 0.01)
         else:
-            send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n')
+            send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n', 0.01)
 
 def setHorizontalServo(pwm_freq, pwm_current_estimate):
     if isinstance(pwm_freq, int) or isinstance(pwm_freq, float):
@@ -79,23 +79,24 @@ def setHorizontalServo(pwm_freq, pwm_current_estimate):
             i=0
             for i in range(int(pwm_diff/15)):
                 if(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/15)))) >= int(pwm_freq)):
-                    send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n')
+                    send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.01)
                     break
-                send_cmd('setServoCycle horizon_servo '+ str(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/15))))) + '\n')
+                send_cmd('setServoCycle horizon_servo '+ str(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/15))))) + '\n', 0.01)
             
         elif(pwm_freq < pwm_current_estimate):
             pwm_diff = pwm_current_estimate - pwm_freq
             i=0
             for i in range(int(pwm_diff/15)):
                 if(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/15)))) >= int(pwm_freq)):
-                    send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n')
+                    send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.01)
                     break
-                send_cmd('setServoCycle horizon_servo '+ str(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/15))))) + '\n')
+                send_cmd('setServoCycle horizon_servo '+ str(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/15))))) + '\n', 0.01)
         else:
-            send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n')
+            send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.01)
+    #print(pwm_freq, pwm_current_estimate)
 
 def getAccelVal():
-    return send_cmd('getADXL' + '\n')
+    return send_cmd('getADXL' + '\n', 0.05)
 
 #send_cmd('setServoCycle horizon_servo 4000' + '\n')
 #init_pico()

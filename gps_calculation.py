@@ -53,6 +53,8 @@ def alternate_calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, headin
 			sinSigma = 1e-15
 		sinAlfa = (math.cos(u1)*math.cos(u2)*math.sin(λ))/sinSigma
 		cosSqrAlfa = (1 - (sinAlfa**2))
+		if(cosSqrAlfa == 0):
+			cosSqrAlfa = 1e-15
 		cos2SigmaM = cosSigma - ((2*math.sin(u1)*math.sin(u2))/cosSqrAlfa)
 		bigC = (f/16)*cosSqrAlfa * (4+(f*(4-(3*cosSqrAlfa))))
 		saveλ = λ
@@ -89,15 +91,15 @@ def alternate_calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, headin
 	direct_distance = float(int(direct_distance*1000)/1000)
 	return direct_distance, newheading_from_home, new_angle
 
-print(calc_gps_distance(56.916714, 24.317700, 56.916711, 24.317302, 240, 30, 15))
-print(alternate_calc_gps_distance(56.916714, 24.317700, 56.916711, 24.317302, 240, 30, 15))
-print(calc_gps_distance(56.916714, 24.317700, 56.916726,24.317554, 240, 30, 15))
-print(alternate_calc_gps_distance(56.916714, 24.317700, 56.916726,24.317554, 240, 30, 15))
-print(calc_gps_distance(56.916714, 24.317700, 56.916694,24.316534, 240, 30, 15))
-print(alternate_calc_gps_distance(56.916714, 24.317700, 56.916694,24.316534, 240, 30, 15))
-print(calc_gps_distance(56.916714, 24.317700, 56.916730, 24.317675, 240, 30, 15))
-print(alternate_calc_gps_distance(56.916714, 24.317700, 56.916730, 24.317675, 240, 30, 15))
-print(calc_gps_distance(56.916714, 24.317700, 56.916712, 24.317710, 240, 30, 15))
-print(alternate_calc_gps_distance(56.916714, 24.317700, 56.916712, 24.317710, 240, 30, 15))
-print(calc_gps_distance(56.916714, 24.317700, 56.917370, 24.318769, 240, 30, 15))
-print(alternate_calc_gps_distance(56.916714, 24.317700, 56.917370, 24.318769, 240, 30, 15))
+#print(calc_gps_distance(56.916714, 24.317700, 56.916711, 24.317302, 240, 30, 15))
+#print(alternate_calc_gps_distance(56.916714, 24.317700, 56.916711, 24.317302, 240, 30, 15))
+#print(calc_gps_distance(56.916714, 24.317700, 56.916726,24.317554, 240, 30, 15))
+#print(alternate_calc_gps_distance(56.916714, 24.317700, 56.916726,24.317554, 240, 30, 15))
+#print(calc_gps_distance(56.916714, 24.317700, 56.916694,24.316534, 240, 30, 15))
+#print(alternate_calc_gps_distance(56.916714, 24.317700, 56.916694,24.316534, 240, 30, 15))
+#print(calc_gps_distance(56.916714, 24.317700, 56.916730, 24.317675, 240, 30, 15))
+#print(alternate_calc_gps_distance(56.916714, 24.317700, 56.916730, 24.317675, 240, 30, 15))
+#print(calc_gps_distance(56.916714, 24.317700, 56.916712, 24.317710, 240, 30, 15))
+#print(alternate_calc_gps_distance(56.916714, 24.317700, 56.916712, 24.317710, 240, 30, 15))
+#print(calc_gps_distance(56.916714, 24.317700, 56.917370, 24.318769, 240, 30, 15))
+#print(alternate_calc_gps_distance(56.916714, 24.317700, 56.917370, 24.318769, 240, 30, 15))
