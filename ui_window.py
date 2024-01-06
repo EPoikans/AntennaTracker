@@ -1,3 +1,7 @@
+import io
+import os
+import sys
+from tempfile import NamedTemporaryFile
 import threading
 import time
 from tkinter import *
@@ -17,7 +21,11 @@ import servo_change
 import serial_com
 import platform
 import preload_knn
-
+from ipyleaflet import Map, Marker, basemaps
+import folium
+from folium.plugins import MarkerCluster
+import os
+import imgkit
 
 def main():
 	global comp_setup, geometry_res
@@ -71,8 +79,10 @@ def main():
 	"""
 	init_button = tk.Button(mainwindow, command=initialize)
 	init_button.grid(row=5,column=0,columnspan=2, pady=35)
-	init_pico = tk.Button(mainwindow, command=serial_com.init_pico) #No check if done currently!!!!!!!
-	init_pico.grid(row=7,column=0,columnspan=2, pady=5)
+	init_pico = tk.Button(mainwindow, command=serial_com.init_pico)
+	init_pico.grid(row=7,column=0, pady=5)
+	retry_serial = tk.Button(mainwindow, text="Retry Serial connection", command=serial_com.retrySerial)
+	retry_serial.grid(row=7,column=1, pady=5)
 	mavlink_sample= tk.Button(mainwindow, command=SampleMavlink)
 	mavlink_sample.grid(row=10,column=1, pady=5)
 	OSD_sample= tk.Button(mainwindow, command=SampleVideo)
@@ -82,6 +92,8 @@ def main():
 	error_label.grid(row=6, column=0, columnspan=2, pady=5)
 	Return_btt= tk.Button(mainwindow, command=lambda: ReturnBttFn(mainwindow))
 	Return_btt.grid(row=20,column=0, pady=5)
+	map_test= tk.Button(mainwindow, text="Map testing", command=MapTestWindow)
+	map_test.grid(row=20,column=1, pady=5)
 	if(comp_setup=='PC'):
 		home_pos_choice_label.config(text="Select how to obtain home GPS position and compass heading")
 		system_choice_label.config(text="Select which system(s) to use for obtaining GPS coords")
@@ -100,7 +112,9 @@ def main():
 		system_checkbox1.config(text="OSD", font=rp_font)
 		system_checkbox2.config(text="Mavlink", font=rp_font)
 		init_button.config(text="Next", font=rp_font)
+		retry_serial.config(text="", state="disabled", bd=0, highlightthickness=0)
 		init_pico.config(text="", state="disabled", bd=0, highlightthickness=0)
+		map_test.config(text="", state="disabled", bd=0, highlightthickness=0)
 		mavlink_sample.config(text="", state="disabled", bd=0, highlightthickness=0)
 		OSD_sample.config(text="", state="disabled", bd=0, highlightthickness=0)
 		Return_btt.config(text="Quit", font=rp_font)
@@ -261,20 +275,99 @@ def initialize():
 		else:
 			error_label.config(text="Drone GPS method err")
 
+def MapTestWindow():
+	global map_window
+	map_window = tk.Toplevel(mainwindow)
+	map_window.geometry("1600x900")
+	map_window.title("Interactive map")
+	global home_gps_result_gps
+	home_label = tk.Label(map_window, text="Obtain coordinates from the GPS module as Map center point")
+	home_label.grid(row=0,column=0,pady=20,padx=20)
+	home_gps_result_gps = tk.Label(map_window, text="No GPS data retrieved")
+	home_gps_result_gps.grid(row=2,column=0, pady=5, padx=50)
+	retry_btt = tk.Button(map_window, text="Retry GPS", command=GetGPS)
+	retry_btt.grid(row=4, column=0, pady=5)
+	global map_frame
+	map_frame = tk.Label(map_window)
+	map_frame.grid(row=7, column=0)
+	
+	createmap = tk.Button(map_window, text="Create Map", command=createMap)
+	createmap.grid(row=5, column=0, pady=5)
+	global datafield
+	datafield = tk.Label(map_window)
+	datafield.grid(row=6, column=0)
+	Return_btt= tk.Button(map_window, text="Return", command=lambda: ReturnBttFn(map_window))
+	Return_btt.grid_forget()
+	#GetGPS()
+	if(coords!="Timeout"):
+		home_gps_result_gps.config(text=coords)
+	else:
+		home_gps_result_gps.config(text="No home coordinates retrieved")
+	Return_btt.grid(row=20,column=0, pady=5)
+
+def createMap():
+	global coords
+	homelat, homelon = coords[0], coords[1]
+	homelat, homelon = 60.1699, 24.9384 # temp
+	global map_instance, map_frame, map_window, marker_cluster, bounds
+	bound_offset = 1/111.2 # 1km radius roughly
+	bounds = [[homelat - bound_offset, homelon - bound_offset], [homelat + bound_offset, homelon + bound_offset]]
+	map_instance = folium.Map(location=[homelat, homelon], zoom_start=12)
+	marker_cluster = MarkerCluster().add_to(map_instance)
+	map_instance.fit_bounds(bounds)
+	folium.Marker([homelat, homelon], popup="Home Location").add_to(marker_cluster)
+	img_data = map_instance._to_png(1)
+	img = Image.open(io.BytesIO(img_data))
+	img_tk = ImageTk.PhotoImage(img)
+	map_frame.config(image=img_tk)
+	map_frame.image = img_tk
+	map_frame.bind("<Button-1>", click_map)
+	
+def click_map(event):
+	print(event)
+	threading.Thread(target=process_click, args=(event,)).start()
+
+def process_click(event):
+	angle = 10
+	global map_instance, map_frame, coords, marker_cluster, bounds
+	lon = bounds[0][1] + event.x / map_frame.winfo_width() * (bounds[1][1] - bounds[0][1])
+	lat = bounds[1][0] - event.y / map_frame.winfo_height() * (bounds[1][0] - bounds[0][0])
+	heading = coords[3]
+	folium.Marker([lat, lon], popup="Clicked Location").add_to(marker_cluster)
+	map_instance.save("temp_map.html")
+	img_data = map_instance._to_png(1)
+	img = Image.open(io.BytesIO(img_data))
+	img_tk = ImageTk.PhotoImage(img)
+	map_frame.config(image=img_tk)
+	map_frame.image = img_tk
+	direct_distance, newheading_from_home, new_angle = gps_calculation.alternate_calc_gps_distance(coords[0], coords[1], lat, lon, heading, angle, 40)
+	heading = servo_change.headingchangeFn(heading, newheading_from_home, False, coords[3])
+	#direct_distance, newheading_from_home, new_angle = gps_calculation.alternate_calc_gps_distance(60.1699, 24.9384, lat, lon, heading, angle, 100)
+	#heading = servo_change.headingchangeFn(heading, newheading_from_home, False, 0)
+	angle = servo_change.anglechangeFn(angle, new_angle, False)
+	datafield.config(text=("Direct distance - " + str(direct_distance) + " Calculated new heading - " + str(newheading_from_home) + " New angle at 100m alt - " + str(new_angle)))
+	print(lat, lon)
+
+
 def GetGPS():
 	global coords
 	heading = serial_com.getMagnetometer()
 	latlon = serial_com.getGPS()
 	lat = latlon[0]
-	print(lat)
 	lon = latlon[1]
-	print(lon)
 	coords = [lat,lon,0, heading]
 	if(coords!="Timeout"):
-		home_gps_result_gps.config(text=coords)
+		home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
 	else:
 		home_gps_result_gps.config(text="No home coordinates retrieved")
-	gps_home_window.update_idletasks()
+	try:
+		gps_home_window.update_idletasks()
+	except:
+		pass
+	try:
+		map_window.update_idletasks()
+	except:
+		pass
 
 def TestVideo(iter_count):
 	testcoord, img = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, preload_knn.knn, True)

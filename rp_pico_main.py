@@ -59,8 +59,8 @@ def readMagnetometer():
         heading += declination_angle
         if heading < 0:
             heading += 360
-        print("Magnetic field in X: %.2f uT, Y: %.2f uT, Z: %.2f uT, Heading: %.2f°" % (x, y, z, heading))
-        return heading
+        #print("Magnetic field in X: %.2f uT, Y: %.2f uT, Z: %.2f uT, Heading: %.2f°" % (x, y, z, heading))
+        return str(heading)
     except:
         return ('err')
 
@@ -97,15 +97,18 @@ def exec_cmd(command):
         heading = readMagnetometer()
         return heading
     elif fnname == "pollGPS":
-        lat, lon = pollGPS()
-        return lat, lon
+        try:
+            lat, lon = pollGPS()
+            return lat, lon
+        except:
+            return 0, 0
     elif fnname == "checkGPSSat":
         sat_count = checkGPSSat()
         return sat_count
     elif fnname == "PortCheck":
         portconfirm = "RPPico"
-        return portconfirm
-		
+        return str(portconfirm)
+
 """
 """
 NMEA 0183 messages
@@ -129,8 +132,9 @@ $ - begining of message
 
 $GNGSA - active sattelite count
 $GNGLL - lat and lon 
-
 """
+
+
 """
 
 def pollGPS():
@@ -160,7 +164,7 @@ def pollGPS():
                     return lat, lon
             except:
                 timeoutvar +=1
-                if(timeoutvar >= 50000):
+                if(timeoutvar >= 10000):
                     break
                 else:
                     pass

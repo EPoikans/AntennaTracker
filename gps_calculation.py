@@ -73,16 +73,9 @@ def alternate_calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, headin
 	if(alfa1 < 0):
 		alfa1+=360
 	newheading_from_home = alfa1
-	#alfa2 = math.atan2(math.cos(u1)*math.sin(λ), -math.sin(u1)*math.cos(u2)+math.cos(u1)*math.sin(u2)*math.cos(λ))
-	#alfa2 = math.degrees(alfa2)
 	direct_distance = math.sqrt(drone_alt*drone_alt + s*s)
-	if(s>=5 and drone_alt >=3):
+	if((s>0 and drone_alt >5) or (s>=10 and drone_alt >=0)):
 		new_angle = math.sin(drone_alt/direct_distance)*180/math.pi
-	elif(drone_alt>=10 and s<=5):
-		new_angle = math.sin(drone_alt/2)*180/math.pi
-	elif(s<=5 and drone_alt<=3):
-		newheading_from_home = heading_current
-		new_angle = angle_current
 	else:
 		new_angle = 10
 	if(new_angle <= 5):

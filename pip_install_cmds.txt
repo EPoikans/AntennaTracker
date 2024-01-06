@@ -1,0 +1,16 @@
+pip install pymavlink
+pip install pyserial
+pip install folium
+pip install numpy
+pip install opencv-python
+pip install pillow
+pip install tkinterhtml
+pip install tkinterweb
+
+sudo pip install pymavlink --break-system-packages
+sudo pip install pyserial --break-system-packages
+sudo pip install folium --break-system-packages
+sudo pip install numpy --break-system-packages
+sudo pip install opencv-python --break-system-packages
+sudo pip install pillow --break-system-packages
+sudo pip install tkinterhtml --break-system-packages
