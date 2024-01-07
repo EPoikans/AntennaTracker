@@ -2,6 +2,7 @@ from pymavlink import mavutil
 import numpy as np
 import tkinter as tk
 import ui_window
+import initialize_data
 
 def get_gps_mavlink(the_connection):
     vfr = False
@@ -22,6 +23,8 @@ def get_gps_mavlink(the_connection):
                 temp_gps_data = np.array([int(msg['time_boot_ms']/100), heading, int(msg['hdg']/100), msg['lat']/(10000000), msg['lon']/(10000000),int(msg['relative_alt']/1000), int(fix_type), int(sat_count)])
                 if(vfr and gps_raw):
                     return_gps = temp_gps_data.copy()
+                    if initialize_data.debug:
+                        print(return_gps + "Mavlink GPS data")
                     return return_gps
         except:
             pass
@@ -33,6 +36,8 @@ def test_mavlink_connection(the_connection):
     while True:
         try:
             msg = the_connection.recv_match().to_dict()
+            if initialize_data.debug:
+                print(msg)
             return msg
         except:
             i+=1
@@ -114,7 +119,8 @@ def await_home_coords(the_connection): #Usable if no GPS & compass unit on groun
         i+=1
         try:
             msg = the_connection.recv_match().to_dict()
-            #print(msg)
+            if initialize_data.debug:
+                print(msg)
             if(msg['mavpackettype']=='GPS_RAW_INT'):
                 fix_type = msg['fix_type']
                 sat_count = msg['satellites_visible']

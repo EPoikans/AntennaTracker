@@ -10,6 +10,9 @@ import serial.tools.list_ports
 global gpshome
 gpshome = []
 
+global debug
+debug = True
+
 def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, accelerometer):
 	global accelerometer_bool
 	cv2.VideoCapture(0).release()
@@ -23,6 +26,8 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 			comp_setup = 'PC'
 	else:
 		comp_setup = 'PC'
+	if(debug):
+		print(str(comp_setup) + ' computer used')
 	if(useOSD):
 
 		# Must be the same as training data!
@@ -123,6 +128,8 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 		else:
 			usedaddress = connect_adress
 		global the_connection
+		if(debug):
+			print(str(usedaddress) + "Mavlink connection adress")
 		the_connection = mavutil.mavlink_connection(usedaddress, baud=57600)
 		the_connection.wait_heartbeat()
 		if(usetestfile == False):

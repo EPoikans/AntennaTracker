@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import initialize_data
 
 #Loading training images and labels and saving the data
 images = []
@@ -12,6 +13,10 @@ img_data = []
 resize_newsize = (20,20) #Default pictures are 30x30 px
 resize = True
 show_img_examples = False
+
+if initialize_data.debug:
+	print(resize_newsize + ' - resize newsize' + resize + ' - resize' + show_img_examples + ' - show img examples')
+	print(picnum + ' - Dataset size')
 
 for i in range(picnum):
 	tempimg = cv2.imread('./images/%d.jpg' %i) #Reads image with the name of int(i).jpg

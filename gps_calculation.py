@@ -1,4 +1,5 @@
 import math
+import initialize_data
 
 def calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, heading_current, angle_current, drone_alt):
 	lat1 = float(lat_home)*math.pi/180 #Home latitude
@@ -75,13 +76,15 @@ def alternate_calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, headin
 	newheading_from_home = alfa1
 	direct_distance = math.sqrt(drone_alt*drone_alt + s*s)
 	if((s>0 and drone_alt >5) or (s>=10 and drone_alt >=0)):
-		new_angle = math.sin(drone_alt/direct_distance)*180/math.pi
+		new_angle = (math.asin(drone_alt/direct_distance)*180)/math.pi
 	else:
 		new_angle = 10
 	if(new_angle <= 5):
 		new_angle = 5
 	new_angle = float(int(new_angle*1000)/1000)
 	direct_distance = float(int(direct_distance*1000)/1000)
+	if(initialize_data.debug):
+		print("Direct distance: ", str(direct_distance) + " Newheading from home: " + str(newheading_from_home) + " New angle: " + str(new_angle) + " Ground distance: " + str(s)) 
 	return direct_distance, newheading_from_home, new_angle
 
 #print(calc_gps_distance(56.916714, 24.317700, 56.916711, 24.317302, 240, 30, 15))

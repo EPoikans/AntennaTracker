@@ -1,4 +1,5 @@
 import io
+import math
 import os
 import sys
 from tempfile import NamedTemporaryFile
@@ -236,13 +237,17 @@ def initialize():
 					global home_gps_result_gps
 					home_label = tk.Label(gps_home_window)
 					home_gps_result_gps = tk.Label(gps_home_window, text="No GPS data retrieved")
-					home_gps_result_gps.grid(row=2,column=0, pady=5)
+					home_gps_result_gps.grid(row=2,column=0, columnspan=2, pady=5)
 					home_gps_confirm = tk.Button(gps_home_window, text="Confirm", command=submitOSDHome)
 					home_gps_confirm.grid(row=3,column=0, pady=5)
 					retry_btt = tk.Button(gps_home_window, text="Retry GPS", command=GetGPS)
 					retry_btt.grid(row=4, column=0, pady=5)
 					Return_btt= tk.Button(gps_home_window, text="Return", command=lambda: ReturnBttFn(gps_home_window))
 					Return_btt.grid_forget()
+					offset_compass1 = tk.Button(map_window, text="Offset compass +10deg", command=offsetplus)
+					offset_compass2 = tk.Button(map_window, text="Offset compass -10deg", command=offsetminus)
+					offset_compass1.grid(row=4, column=1, pady=5)
+					offset_compass2.grid(row=3, column=1, pady=5)
 					GetGPS()
 					if(coords!="Timeout"):
 						home_gps_result_gps.config(text=coords)
@@ -257,11 +262,15 @@ def initialize():
 						home_gps_result_gps.config(font=(font.nametofont("TkDefaultFont"), 20),bd=3, relief=tk.SUNKEN)
 						home_gps_confirm.config(font=(font.nametofont("TkDefaultFont"), 20), bd=8, relief=tk.RAISED)
 						Return_btt.config(font=(font.nametofont("TkDefaultFont"), 20), bd=8, relief=tk.RAISED)
-						home_label.grid(row=0,column=0, padx=40, pady=3)
+						home_label.grid(row=0,column=0,columnspan=2, padx=40, pady=3)
+						offset_compass1.config(text="+10deg")
+						offset_compass2.config(text="-10deg")
 						retry_btt.grid(row=4,column=0, padx=40,pady=3)
-						home_gps_result_gps.grid(row=2,column=0, padx=40,pady=3)
-						home_gps_confirm.grid(row=3,column=0,padx=40, pady=3)
+						home_gps_result_gps.grid(row=2,column=0,columnspan=2, padx=40,pady=3)
+						home_gps_confirm.grid(row=3,column=0,columnspan=2, padx=40, pady=3)
 						Return_btt.grid(row=20,column=0, padx=40,pady=3)
+						offset_compass1.grid(row=4, column=1, pady=5)
+						offset_compass2.grid(row=20, column=1, pady=5)
 				else:
 					error_label.config(text="No response from GPS module")
 		else:
@@ -285,68 +294,76 @@ def MapTestWindow():
 	home_label.grid(row=0,column=0,pady=20,padx=20)
 	home_gps_result_gps = tk.Label(map_window, text="No GPS data retrieved")
 	home_gps_result_gps.grid(row=2,column=0, pady=5, padx=50)
-	retry_btt = tk.Button(map_window, text="Retry GPS", command=GetGPS)
+	retry_btt = tk.Button(map_window, text="Collect GPS", command=GetGPS)
 	retry_btt.grid(row=4, column=0, pady=5)
 	global map_frame
-	map_frame = tk.Label(map_window)
-	map_frame.grid(row=7, column=0)
-	
+	map_frame = tk.Label(map_window, width=800, height=480)
+	map_frame.forget()
 	createmap = tk.Button(map_window, text="Create Map", command=createMap)
 	createmap.grid(row=5, column=0, pady=5)
 	global datafield
 	datafield = tk.Label(map_window)
 	datafield.grid(row=6, column=0)
 	Return_btt= tk.Button(map_window, text="Return", command=lambda: ReturnBttFn(map_window))
-	Return_btt.grid_forget()
+	Return_btt.grid(row=0,column=1,pady=20)
+	zero_pico = tk.Button(map_window, text="Zero Servos", command=serial_com.init_pico)
+	zero_pico.grid(row=1, column=1, pady=5)
+	offset_compass1 = tk.Button(map_window, text="Offset compass +10deg", command=offsetplus)
+	offset_compass2 = tk.Button(map_window, text="Offset compass -10deg", command=offsetminus)
+	offset_compass1.grid(row=2, column=1, pady=5)
+	offset_compass2.grid(row=3, column=1, pady=5)
 	#GetGPS()
-	if(coords!="Timeout"):
-		home_gps_result_gps.config(text=coords)
-	else:
-		home_gps_result_gps.config(text="No home coordinates retrieved")
-	Return_btt.grid(row=20,column=0, pady=5)
+	#if(coords!="Timeout"):
+	#	home_gps_result_gps.config(text=coords)
+	#else:
+	#	home_gps_result_gps.config(text="No home coordinates retrieved")
+
+def offsetplus():
+	global coords
+	coords[3]+=10
+	home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
+
+def offsetminus():
+	global coords
+	coords[3]-=10
+	home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
 
 def createMap():
 	global coords
-	homelat, homelon = coords[0], coords[1]
-	homelat, homelon = 60.1699, 24.9384 # temp
+	homelat, homelon = float(coords[0]), float(coords[1])
+	#homelat, homelon = 60.1699, 24.9384 # temp
 	global map_instance, map_frame, map_window, marker_cluster, bounds
-	bound_offset = 1/111.2 # 1km radius roughly
+	bound_offset = 0.25/111.2 # 250m radius roughly
 	bounds = [[homelat - bound_offset, homelon - bound_offset], [homelat + bound_offset, homelon + bound_offset]]
-	map_instance = folium.Map(location=[homelat, homelon], zoom_start=12)
+	map_instance = folium.Map(location=[homelat, homelon], zoom_start=13)
 	marker_cluster = MarkerCluster().add_to(map_instance)
 	map_instance.fit_bounds(bounds)
 	folium.Marker([homelat, homelon], popup="Home Location").add_to(marker_cluster)
 	img_data = map_instance._to_png(1)
 	img = Image.open(io.BytesIO(img_data))
+	img = img.resize((800, 480), Image.ANTIALIAS)
 	img_tk = ImageTk.PhotoImage(img)
 	map_frame.config(image=img_tk)
 	map_frame.image = img_tk
+	map_frame.grid(row=7, column=0, columnspan=2)
 	map_frame.bind("<Button-1>", click_map)
 	
 def click_map(event):
-	print(event)
 	threading.Thread(target=process_click, args=(event,)).start()
 
 def process_click(event):
-	angle = 10
+	angle=10
 	global map_instance, map_frame, coords, marker_cluster, bounds
-	lon = bounds[0][1] + event.x / map_frame.winfo_width() * (bounds[1][1] - bounds[0][1])
-	lat = bounds[1][0] - event.y / map_frame.winfo_height() * (bounds[1][0] - bounds[0][0])
-	heading = coords[3]
-	folium.Marker([lat, lon], popup="Clicked Location").add_to(marker_cluster)
-	map_instance.save("temp_map.html")
-	img_data = map_instance._to_png(1)
-	img = Image.open(io.BytesIO(img_data))
-	img_tk = ImageTk.PhotoImage(img)
-	map_frame.config(image=img_tk)
-	map_frame.image = img_tk
-	direct_distance, newheading_from_home, new_angle = gps_calculation.alternate_calc_gps_distance(coords[0], coords[1], lat, lon, heading, angle, 40)
-	heading = servo_change.headingchangeFn(heading, newheading_from_home, False, coords[3])
-	#direct_distance, newheading_from_home, new_angle = gps_calculation.alternate_calc_gps_distance(60.1699, 24.9384, lat, lon, heading, angle, 100)
+	lon = float(bounds[0][1] + event.x / map_frame.winfo_width() * (bounds[1][1] - bounds[0][1]))
+	lat = float(bounds[1][0] - event.y / map_frame.winfo_height() * (bounds[1][0] - bounds[0][0]))
+	heading = float(coords[3])
+	setaltitude = 50
+	direct_distance, newheading_from_home, new_angle = gps_calculation.alternate_calc_gps_distance(coords[0], coords[1], lat, lon, heading, angle, setaltitude)
+	angle = servo_change.anglechangeFn(new_angle, new_angle, False)
+	heading = servo_change.headingchangeFn(newheading_from_home, newheading_from_home, False, float(coords[3]))
+	#direct_distance, newheading_from_home, new_angle = gps_calculation.alternate_calc_gps_distance(60.1699, 24.9384, lat, lon, heading, angle, setaltitude)
 	#heading = servo_change.headingchangeFn(heading, newheading_from_home, False, 0)
-	angle = servo_change.anglechangeFn(angle, new_angle, False)
-	datafield.config(text=("Direct distance - " + str(direct_distance) + " Calculated new heading - " + str(newheading_from_home) + " New angle at 100m alt - " + str(new_angle)))
-	print(lat, lon)
+	datafield.config(text=("Ground distance - " + str(int(math.sqrt(direct_distance*direct_distance - setaltitude*setaltitude))) + " Direct distance - " + str(direct_distance) + " Calculated new heading - " + str(newheading_from_home) + " New angle at 100m alt - " + str(new_angle)))
 
 
 def GetGPS():
@@ -633,8 +650,8 @@ def TrackingLoop():
 			distancefromhome.config(text="Distance from home - " + str(int(direct_distance)) + " New heading - "+ str(int(newheading_from_home)) + " New angle - " + str(int(new_angle)))
 			dronecoord.config(text="Drone coordinates - " + str(dronecoords_save))
 			workWindow.after(50)
-			heading = servo_change.headingchangeFn(heading, newheading_from_home, initialize_data.accelerometer_bool, gpshome[3])
 			angle = servo_change.anglechangeFn(angle, new_angle, initialize_data.accelerometer_bool)
+			heading = servo_change.headingchangeFn(heading, newheading_from_home, initialize_data.accelerometer_bool, gpshome[3])
 			if(sanitycount >=1000 or ((osd_sanitycount >=1000 or not osd_for_gps) and (mav_sanitycount >= 1000 or not mavlink_for_gps))):
 				loop_running = False
 				StartFailsafeTracking(heading, angle)

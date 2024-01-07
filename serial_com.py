@@ -2,6 +2,8 @@ import platform
 import serial
 import time
 
+debug = True
+
 def findSerialPort(system):
     if(system == 'linux' or system == 'raspberrypi'):
         portstart = "/dev/ttyACM"
@@ -16,7 +18,8 @@ def findSerialPort(system):
                 ser.write(msg.encode())
                 time.sleep(1)
                 response = ser.readline().decode().strip()
-                #print(msg, response)
+                if debug:
+                    print(msg, response)
                 if(response == "RPPico"):
                     return serial_port
         except:
@@ -37,13 +40,15 @@ if platform.system().lower() == 'linux':
 else:
     serial_port = findSerialPort("windows")
     system = "windows"
-    print(serial_port)
+    if debug:
+        print(serial_port)
     baud = 115200
 
 def retrySerial():
     global serial_port, system
     serial_port = findSerialPort(system)
-    print(serial_port)
+    if debug:
+        print(serial_port)
 
 
 def send_cmd(command, sleeptime):
@@ -53,10 +58,12 @@ def send_cmd(command, sleeptime):
             ser.write(command.encode())
             time.sleep(sleeptime)
             response = ser.readline().decode().strip()
-            print(f"Sent: {command}Received: {response}")
+            if debug:
+                print(f"Sent: {command}Received: {response}")
             return response
     except Exception as e:
-        print(f"Error: {e}")
+        if debug:
+            print(f"Error: {e}")
         return None
 
 def init_pico(accel = False):
@@ -69,8 +76,9 @@ def getGPS():
             res = res[1:]
             res = res[:-1]
             resarr = res.split(',')
-            #print(resarr[0])
-            #print(resarr[1])
+            if debug:
+                print(resarr[0])
+                print(resarr[1])
             return str(float(resarr[0])), str(float(resarr[1]))
         else:
             raise Exception
@@ -84,7 +92,8 @@ def getMagnetometer():
     heading = send_cmd('readMagnetometer ' + '\n', 0.1)
     try:
         if(heading != ''):
-            print(heading)
+            if debug:
+                print(heading)
             return int(float(heading))
         else:
             raise Exception
@@ -94,7 +103,7 @@ def getMagnetometer():
 def setVerticalServo(pwm_freq, pwm_current_estimate):
     if isinstance(pwm_freq, int) or isinstance(pwm_freq, float):
         if(pwm_freq > pwm_current_estimate):
-            pwm_diff = pwm_freq - pwm_current_estimate
+            pwm_diff = pwm_freq - int(pwm_current_estimate)
             i=1
             for i in range(int(pwm_diff/25)):
                 if(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/25)))) >= int(pwm_freq)):
@@ -102,7 +111,7 @@ def setVerticalServo(pwm_freq, pwm_current_estimate):
                     break
                 send_cmd('setServoCycle vert_servo '+ str(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/25))))) + '\n', 0.01)
         elif(pwm_freq < pwm_current_estimate):
-            pwm_diff = pwm_current_estimate - pwm_freq
+            pwm_diff = int(pwm_current_estimate) - pwm_freq
             i=1
             for i in range(int(pwm_diff/25)):
                 if(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/25)))) >= int(pwm_freq)):
@@ -113,32 +122,31 @@ def setVerticalServo(pwm_freq, pwm_current_estimate):
             send_cmd('setServoCycle vert_servo '+ str(int(pwm_freq)) + '\n', 0.01)
 
 def setHorizontalServo(pwm_freq, pwm_current_estimate):
+    pwm_current_estimate = int(pwm_current_estimate)
+    if debug:
+        print(str(pwm_freq), str(pwm_current_estimate) + "sethorizontalServo freq, current estimate")
     if isinstance(pwm_freq, int) or isinstance(pwm_freq, float):
         if(pwm_freq > pwm_current_estimate):
             pwm_diff = pwm_freq - pwm_current_estimate
             i=0
-            for i in range(int(pwm_diff/15)):
-                if(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/15)))) >= int(pwm_freq)):
-                    send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.01)
+            for i in range(int(pwm_diff/50)):
+                if(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/50)))) >= int(pwm_freq)):
+                    send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.02)
                     break
-                send_cmd('setServoCycle horizon_servo '+ str(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/15))))) + '\n', 0.01)
-            
+                send_cmd('setServoCycle horizon_servo '+ str(int(pwm_current_estimate + (i * (pwm_diff/int(pwm_diff/50))))) + '\n', 0.02)
+            send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.02)
         elif(pwm_freq < pwm_current_estimate):
             pwm_diff = pwm_current_estimate - pwm_freq
             i=0
-            for i in range(int(pwm_diff/15)):
-                if(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/15)))) >= int(pwm_freq)):
-                    send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.01)
+            for i in range(int(pwm_diff/50)):
+                if(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/50)))) <= int(pwm_freq)):
+                    send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.02)
                     break
-                send_cmd('setServoCycle horizon_servo '+ str(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/15))))) + '\n', 0.01)
+                send_cmd('setServoCycle horizon_servo '+ str(int(pwm_current_estimate - (i * (pwm_diff/int(pwm_diff/50))))) + '\n', 0.02)
+            send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.02)
         else:
-            send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.01)
-    #print(pwm_freq, pwm_current_estimate)
+            send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.02)
 
 def getAccelVal():
     return send_cmd('getADXL' + '\n', 0.05)
 
-#send_cmd('setServoCycle horizon_servo 4000' + '\n')
-#init_pico()
-#print(getGPS()) 
-#print(getMagnetometer())

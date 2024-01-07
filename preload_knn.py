@@ -2,14 +2,17 @@ import platform
 import cv2
 import numpy as np
 
+debug = True
+
 def knn_accuracy_test(knn,train_array,trainedlabels): #Checks that the NN can recognise the dataset with 100% accuracy
-    ret,result,neighbours,dist = knn.findNearest(train_array,k=1)
-    correct = np.count_nonzero(result==trainedlabels)
-    accuracy = correct*100.0/result.size
-    print( accuracy )
-    if(accuracy!= 100):
-        print('Accurracy not 100%')
-    return accuracy
+	ret,result,neighbours,dist = knn.findNearest(train_array,k=1)
+	correct = np.count_nonzero(result==trainedlabels)
+	accuracy = correct*100.0/result.size
+	if debug:
+		print(f'{accuracy}% accuracy')
+	if accuracy != 100:
+		print('Accuracy not 100%')
+	return accuracy
 
 if platform.system().lower() == 'linux':
 	try:
@@ -22,6 +25,9 @@ if platform.system().lower() == 'linux':
 else:
 	comp_setup = 'PC'
 	knnData = 'knn_data.npz'
+
+if debug:
+	print(str(knnData) + ' knn data filepath used')
 
 with np.load(knnData) as data: #Loads training dataset from images
 		train_array = data['train_array']
