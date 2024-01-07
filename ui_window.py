@@ -1,11 +1,7 @@
 import io
 import math
-import os
-import sys
-from tempfile import NamedTemporaryFile
 import threading
 import time
-from tkinter import *
 from tkinter import ttk
 import tkinter as tk
 from tkinter import font
@@ -25,8 +21,6 @@ import preload_knn
 from ipyleaflet import Map, Marker, basemaps
 import folium
 from folium.plugins import MarkerCluster
-import os
-import imgkit
 
 global debugRaspi, debugPC
 debugRaspi = False #Forces raspberry pi UI
@@ -255,14 +249,14 @@ def initialize():
 					home_label.grid(row=0,column=0, pady=5)
 					home_gps_result_gps = tk.Label(gps_home_window, text="No GPS data retrieved")
 					home_gps_result_gps.grid(row=2,column=0, columnspan=2, pady=5)
-					home_gps_confirm = tk.Button(gps_home_window, text="Confirm", command=submitOSDHome)
+					home_gps_confirm = tk.Button(gps_home_window, text="Confirm", command=submitOSDHome, font=(font.nametofont("TkDefaultFont"), 22), bd=3)
 					home_gps_confirm.grid(row=3,column=0, pady=5)
-					retry_btt = tk.Button(gps_home_window, text="Retry GPS", command=GetGPS)
+					retry_btt = tk.Button(gps_home_window, text="Retry GPS", command=GetGPS, font=(font.nametofont("TkDefaultFont"), 22), bd=3)
 					retry_btt.grid(row=4, column=0, pady=5)
-					Return_btt= tk.Button(gps_home_window, text="Return", command=lambda: ReturnBttFn(gps_home_window))
+					Return_btt= tk.Button(gps_home_window, text="Return", command=lambda: ReturnBttFn(gps_home_window), font=(font.nametofont("TkDefaultFont"), 22), bd=3)
 					Return_btt.grid_forget()
-					offset_compass1 = tk.Button(gps_home_window, text="Offset compass +10deg", command=offsetplus)
-					offset_compass2 = tk.Button(gps_home_window, text="Offset compass -10deg", command=offsetminus)
+					offset_compass1 = tk.Button(gps_home_window, text="Offset compass +10deg", command=offsetplus, font=(font.nametofont("TkDefaultFont"), 16), bd=3)
+					offset_compass2 = tk.Button(gps_home_window, text="Offset compass -10deg", command=offsetminus, font=(font.nametofont("TkDefaultFont"), 16), bd=3)
 					offset_compass1.grid(row=4, column=1, pady=5)
 					offset_compass2.grid(row=3, column=1, pady=5)
 					GetGPS()
@@ -275,7 +269,9 @@ def initialize():
 						home_gps_result_gps.config(text="No home coordinates retrieved")
 					Return_btt.grid(row=20,column=0, pady=5)
 					if(comp_setup == 'PC'):
-						home_label.config(text="Local GPS module coordinates")
+						home_label.config(text="Local GPS module coordinates", font=(font.nametofont("TkDefaultFont"), 22), bd=3 )
+						home_label.grid(padx=50, pady=30)
+						home_gps_result_gps.config(font=(font.nametofont("TkDefaultFont"), 16), relief=tk.SUNKEN, bd=2)
 					else:
 						home_label.config(text="GPS data from station", font=(font.nametofont("TkDefaultFont"), 20))
 						retry_btt.config(font=(font.nametofont("TkDefaultFont"), 20), bd=8, relief=tk.RAISED)
@@ -332,11 +328,6 @@ def MapTestWindow():
 	offset_compass2 = tk.Button(map_window, text="Offset compass -10deg", command=offsetminus)
 	offset_compass1.grid(row=2, column=1, pady=5)
 	offset_compass2.grid(row=3, column=1, pady=5)
-	#GetGPS()
-	#if(coords!="Timeout"):
-	#	home_gps_result_gps.config(text=coords)
-	#else:
-	#	home_gps_result_gps.config(text="No home coordinates retrieved")
 
 def offsetplus():
 	global coords
@@ -363,7 +354,8 @@ def createMap():
 	homelat, homelon = float(coords[0]), float(coords[1])
 	#homelat, homelon = 60.1699, 24.9384 # temp
 	global map_instance, map_frame, map_window, marker_cluster, bounds
-	bound_offset = 0.25/111.2 # 250m radius roughly
+	mapradius = 250 #Radius for map in meters
+	bound_offset = (mapradius/1000)/111.2 
 	bounds = [[homelat - bound_offset, homelon - bound_offset], [homelat + bound_offset, homelon + bound_offset]]
 	map_instance = folium.Map(location=[homelat, homelon], zoom_start=13)
 	marker_cluster = MarkerCluster().add_to(map_instance)

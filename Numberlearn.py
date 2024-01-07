@@ -10,8 +10,8 @@ picnum = 171 #Number of training images
 img_data = []
 
 #Settings for testing run speeds on different img sizes and visualize progress in a window
-resize_newsize = (20,20) #Default pictures are 30x30 px
-resize = True
+resize_newsize = (20,20) #Default pictures are 30x30 px, must be the same value as in initialize data
+resize = True # If true resizes the images to resize_newsize, must be the same value as in initialize data
 show_img_examples = False
 
 if initialize_data.debug:
@@ -21,7 +21,7 @@ if initialize_data.debug:
 for i in range(picnum):
 	tempimg = cv2.imread('./images/%d.jpg' %i) #Reads image with the name of int(i).jpg
 	tempimg = cv2.cvtColor(tempimg, cv2.COLOR_BGR2GRAY) #Forces image to not be RGB
-	if(resize): #False by default
+	if(resize): 
 		tempimg = cv2.resize(tempimg, resize_newsize, interpolation=cv2.INTER_AREA)
 	if(show_img_examples): #False by default, if true, creates a window showing each picture for 500ms and printing the filename in the console
 		cv2.waitKey(500)
