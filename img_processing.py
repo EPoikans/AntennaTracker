@@ -85,14 +85,16 @@ def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, l
 				heading = int(results[i][0])
 		coords = [lat, lon, heading, alt]
 		if(initialize_data.debug):
-			print(str(coords) + 'OSD coordinates')
+			coordstest = locals().get('coords', 'Null')
+			print(str(coordstest) + 'OSD coordinates')
 		if(testosd):
 			return coords, returnimg
 		else:
 			return coords
 	except:
 		if(initialize_data.debug):
-			print(str(coords) + 'OSD coordinates')
+			coordstest = locals().get('coords', 'Null')
+			print(str(coordstest) + 'OSD coordinates')
 		return [False, False, False, False]
 
 def testvideo(videofeed, boundingbox_arr, videofps, capture_frequency,lat_boundbox, lat_width, lat_height, lon_boundbox, lon_width,lon_height,alt_boundbox,alt_width,alt_height, heading_boundbox, heading_width, heading_height, resize, resize_newsize, knn, sample_videofeed_coords, sample_videofeed, samplevideowindow ):

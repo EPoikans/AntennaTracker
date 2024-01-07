@@ -28,6 +28,10 @@ from folium.plugins import MarkerCluster
 import os
 import imgkit
 
+global debugRaspi, debugPC
+debugRaspi = False #Forces raspberry pi UI
+debugPC = True #Forces PC UI
+
 def main():
 	global comp_setup, geometry_res
 	global mainwindow
@@ -49,7 +53,16 @@ def main():
 		geometry_res = '800x480'
 		def_font = font.nametofont("TkDefaultFont")
 		def_font.configure(size=10)
-	
+	if(debugRaspi):
+		comp_setup = 'Raspi'
+		geometry_res = '480x320'
+		def_font = font.nametofont("TkDefaultFont")
+		def_font.configure(size=14)
+	elif(debugPC):
+		comp_setup = 'PC'
+		geometry_res = '800x480'
+		def_font = font.nametofont("TkDefaultFont")
+		def_font.configure(size=10)
 	mainwindow.geometry(geometry_res)
 	mainwindow.title("AntennaTracker")
 	home_pos_choice_label = tk.Label(mainwindow)
@@ -119,9 +132,9 @@ def main():
 		mavlink_sample.config(text="", state="disabled", bd=0, highlightthickness=0)
 		OSD_sample.config(text="", state="disabled", bd=0, highlightthickness=0)
 		Return_btt.config(text="Quit", font=rp_font)
-		Return_btt.grid(row=6)
-		init_button.grid(row=5,column=0, columnspan=3, pady=5)
-		error_label.grid(row=6, column=1, columnspan=2, pady=5)
+		Return_btt.grid(row=5, column=0)
+		init_button.grid(row=5,column=1, columnspan=2, pady=5)
+		error_label.grid(row=6, column=1, columnspan=2, pady=2)
 		system_checkbox1.grid(row=1, column=2, padx=70, sticky="w", pady=5)
 		system_checkbox2.grid(row=2, column=2, padx=70, sticky="w", pady=5)
 		system_choice_label.grid(row=0, column=2, padx=70, pady=2)
@@ -177,7 +190,10 @@ def initialize():
 						Return_btt.grid(row=20,column=0, padx=40,pady=3)
 						Return_btt.grid(row=20,column=0, pady=5)
 					if(coords!="Timeout"):
-						home_gps_result_mav.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[2]) + "  Altitude - " + str(coords[3])))
+						if(comp_setup == 'PC'):
+							home_gps_result_mav.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[2]) + "  Altitude - " + str(coords[3])))
+						else:
+							home_gps_result_mav.config(text=(coords))
 					else:
 						if(comp_setup == 'PC'):
 							home_gps_result_mav.config(text="Home set message not recieved in time, return and try again")
@@ -236,6 +252,7 @@ def initialize():
 					gps_home_window.title("Set home coordinates")
 					global home_gps_result_gps
 					home_label = tk.Label(gps_home_window)
+					home_label.grid(row=0,column=0, pady=5)
 					home_gps_result_gps = tk.Label(gps_home_window, text="No GPS data retrieved")
 					home_gps_result_gps.grid(row=2,column=0, columnspan=2, pady=5)
 					home_gps_confirm = tk.Button(gps_home_window, text="Confirm", command=submitOSDHome)
@@ -244,13 +261,16 @@ def initialize():
 					retry_btt.grid(row=4, column=0, pady=5)
 					Return_btt= tk.Button(gps_home_window, text="Return", command=lambda: ReturnBttFn(gps_home_window))
 					Return_btt.grid_forget()
-					offset_compass1 = tk.Button(map_window, text="Offset compass +10deg", command=offsetplus)
-					offset_compass2 = tk.Button(map_window, text="Offset compass -10deg", command=offsetminus)
+					offset_compass1 = tk.Button(gps_home_window, text="Offset compass +10deg", command=offsetplus)
+					offset_compass2 = tk.Button(gps_home_window, text="Offset compass -10deg", command=offsetminus)
 					offset_compass1.grid(row=4, column=1, pady=5)
 					offset_compass2.grid(row=3, column=1, pady=5)
 					GetGPS()
 					if(coords!="Timeout"):
-						home_gps_result_gps.config(text=coords)
+						if(comp_setup == 'PC'):
+							home_gps_result_gps.config(text=('Latitude - ' + str(coords[0]) + '  Longitude - ' + str(coords[1]) + '  Heading - ' + str(coords[3]) + '  Altitude - ' + str(coords[2])))
+						else:
+							home_gps_result_gps.config(text=(str(coords)))
 					else:
 						home_gps_result_gps.config(text="No home coordinates retrieved")
 					Return_btt.grid(row=20,column=0, pady=5)
@@ -263,8 +283,8 @@ def initialize():
 						home_gps_confirm.config(font=(font.nametofont("TkDefaultFont"), 20), bd=8, relief=tk.RAISED)
 						Return_btt.config(font=(font.nametofont("TkDefaultFont"), 20), bd=8, relief=tk.RAISED)
 						home_label.grid(row=0,column=0,columnspan=2, padx=40, pady=3)
-						offset_compass1.config(text="+10deg")
-						offset_compass2.config(text="-10deg")
+						offset_compass1.config(text="+10deg", font=(font.nametofont("TkDefaultFont"), 20), bd=8, relief=tk.RAISED)
+						offset_compass2.config(text="-10deg", font=(font.nametofont("TkDefaultFont"), 20), bd=8, relief=tk.RAISED)
 						retry_btt.grid(row=4,column=0, padx=40,pady=3)
 						home_gps_result_gps.grid(row=2,column=0,columnspan=2, padx=40,pady=3)
 						home_gps_confirm.grid(row=3,column=0,columnspan=2, padx=40, pady=3)
@@ -321,13 +341,23 @@ def MapTestWindow():
 def offsetplus():
 	global coords
 	coords[3]+=10
-	home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
+	if(coords[3]>=360):
+		coords[3]-=360
+	if(comp_setup=='PC'):
+		home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
+	else:
+		home_gps_result_gps.config(text=(str(coords)))
 
 def offsetminus():
 	global coords
 	coords[3]-=10
-	home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
-
+	if(coords[3]<=0):
+		coords[3]+=360
+	if(comp_setup=='PC'):
+		home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
+	else:
+		home_gps_result_gps.config(text=(str(coords)))
+	
 def createMap():
 	global coords
 	homelat, homelon = float(coords[0]), float(coords[1])
@@ -368,13 +398,24 @@ def process_click(event):
 
 def GetGPS():
 	global coords
-	heading = serial_com.getMagnetometer()
 	latlon = serial_com.getGPS()
+	try:
+		gps_home_window.after(500)
+	except:
+		pass
+	try:
+		map_window.after(500)
+	except:
+		pass
+	heading = serial_com.getMagnetometer()
 	lat = latlon[0]
 	lon = latlon[1]
 	coords = [lat,lon,0, heading]
 	if(coords!="Timeout"):
-		home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
+		if(comp_setup=='PC'):
+			home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
+		else:
+			home_gps_result_gps.config(text=(str(coords)))
 	else:
 		home_gps_result_gps.config(text="No home coordinates retrieved")
 	try:
@@ -502,7 +543,10 @@ def SampleMavlink():
 def OSDHomePos():
 	global coords
 	coords = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, preload_knn.knn, False)
-	home_gps_result.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[2]) + "  Altitude - " + str(coords[3])))
+	if(comp_setup=='PC'):
+		home_gps_result.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[2]) + "  Altitude - " + str(coords[3])))
+	else:
+		home_gps_result.config(text=(str(coords)))
 
 def submitOSDHome():
 	global gpshome
@@ -591,6 +635,10 @@ def TrackingLoop():
 	sanitycount, osd_sanitycount, mav_sanitycount, lastalt_osd, lastalt_mav = 0, 0, 0, 0, 0
 	heading = int(gpshome[3])
 	angle = 0
+	if(isinstance(gpshome, list)):
+		dronecoords_save = [gpshome[0],gpshome[1],gpshome[2]]
+	else:
+		loop_running = False
 	if(len(gpshome) == 4):
 		while loop_running:
 			if(osd_for_gps):
@@ -692,7 +740,7 @@ def FailsafeTracking(lastheading, lastangle):
 def HaltTracker():
 	global loop_running_failsafe, loop_running
 	loop_running_failsafe, loop_running = False, False
-	serial_com.send_cmd('exit')
+	serial_com.send_cmd('exit', 0.01)
 
 
 def workingWindow():
