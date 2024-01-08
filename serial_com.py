@@ -104,6 +104,7 @@ def getMagnetometer(): #Gets the magnetometer data from the pico
     except:
         return False
 
+
 #Sets the vertical angle servo by doing multiple substeps from the current angle to the desired angle for less physical shaking
 def setVerticalServo(pwm_freq, pwm_current_estimate):
     servoSpeed = 100 #Speed variable that determines the number of substeps - higher is faster

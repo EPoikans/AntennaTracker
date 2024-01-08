@@ -1,8 +1,10 @@
 import math
 import initialize_data
 
-#Vincenty's formulae for GPS distance and heading calculation - https://en.wikipedia.org/wiki/Vincenty%27s_formulae
+'''
+Vincenty's formulae for GPS distance and heading calculation - https://en.wikipedia.org/wiki/Vincenty%27s_formulae
 #Using Inverse problem to calculate ellipsiodal distance between two points on the earths surface and the heading from the first point to the second point
+'''
 
 def alternate_calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, heading_current, angle_current, drone_alt):
 	lat1 = (float(lat_home)*math.pi)/180 #Home latitude

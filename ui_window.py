@@ -23,11 +23,31 @@ import folium
 from folium.plugins import MarkerCluster
 from selenium import webdriver
 
+
+'''
+
+ui_window.py structure - 
+1. Initial UI screen - From line 51
+2. Data initialization window - From line 186
+3. Map functionality for PC - From line 370
+4. Testing window functions - From line 450
+5. Mavlink and OSD sample functions - From line 580
+6. Main tracking logic and UI updating loop - From line 640
+7. Failsafe tracking functions - From line 780
+8. Tracking UI window - From line 820
+9. Small helping functions - From line 900
+
+'''
+
 #UI debug/testing options
 global debugRaspi, debugPC
 debugRaspi = False #Forces raspberry pi UI
 debugPC = False #Forces PC UI
 
+'''
+Initial UI screen with sample buttons, map functionality, selecting Home position, selecting the way to obtain coordinates from drone.
+
+'''
 def main(): #Main tkinter loop
 	global comp_setup, geometry_res
 	global mainwindow
@@ -146,6 +166,23 @@ def main(): #Main tkinter loop
 	
 	mainwindow.mainloop()
 
+'''
+Data initialization window -> Initialize data on PC or Next from the start menu on raspberry pi
+
+Processes main menu selected data to route to Home pos selection window
+
+Home pos selection has three paths -> 
+
+home_gps_select == 1 -> Mavlink
+home_gps_select == 2 -> OSD
+home_gps_select == 3 -> GPS module
+
+For OSD Home pos selection OSD coordinates must be enabled
+For Mavlink Home pos selection Mavlink coordinates must be enabled
+
+'''
+
+
 def initialize():
 	serial_com.init_pico()
 	global home_gps_select
@@ -155,7 +192,7 @@ def initialize():
 	global mavlink_for_gps
 	mavlink_for_gps = system_checkbox_var2.get()
 	global comp_setup
-	accelerometer = False #system_checkbox_var3.get() If accelerometer feature is to be used.
+	accelerometer = False 
 	global gps_home_window
 	global coords
 	if(home_gps_select): #Checks if home position selection has been made
@@ -325,6 +362,11 @@ def initialize():
 		else: #Shortened error message for raspberry pi UI
 			error_label.config(text="Drone GPS method err")
 
+
+'''
+Map window functions for non Raspberry Pi usage
+'''
+
 #Map window available only on PC UI for demonstration and checking servo direction and GPS calculations
 def MapTestWindow():
 	global map_window #Window settings
@@ -364,25 +406,7 @@ def MapTestWindow():
 	offset_compass1.grid(row=2, column=1, pady=5)
 	offset_compass2.grid(row=3, column=1, pady=5)
 
-def offsetplus(): #Coordinate offset function
-	global coords
-	coords[3]+=10
-	if(coords[3]>=360): #Handles magnetometer value going from 360 to 0
-		coords[3]-=360
-	if(comp_setup=='PC'): #Updates the coordinates with changed heading value
-		home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
-	else:
-		home_gps_result_gps.config(text=(str(coords)))
 
-def offsetminus(): #Coordinate offset function
-	global coords
-	coords[3]-=10
-	if(coords[3]<=0): #Handles magnetometer value going from 0 to 360
-		coords[3]+=360
-	if(comp_setup=='PC'): #Updates the coordinates with changed heading value
-		home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
-	else:
-		home_gps_result_gps.config(text=(str(coords)))
 	
 def createMap():
 	global coords
@@ -423,40 +447,60 @@ def process_click(event):
 	datafield.config(text=("Ground distance - " + str(int(math.sqrt(direct_distance*direct_distance - setaltitude*setaltitude))) + " Direct distance - " + str(direct_distance) + " Calculated new heading - " + str(newheading_from_home) + " New angle at 100m alt - " + str(new_angle)))
 
 
-def GetGPS():
-	global coords
-	latlon = serial_com.getGPS()
-	#Get GPS may take 0.5-1s and if the magnetometer function gets called too early returning data might be crossed
-	#This function is used by two windows so it forces a 500ms wait on the window active at the time
-	try:
-		gps_home_window.after(500)
-	except:
-		pass
-	try:
-		map_window.after(500)
-	except:
-		pass
-	#Obtains magnetometer heading from the RP Pico
-	heading = serial_com.getMagnetometer()
-	lat = latlon[0]
-	lon = latlon[1]
-	coords = [lat,lon,0, heading] #Array with coordinates and heading and altitude
-	if(coords!="Timeout"): #Coordinates are recieved and displayed based on system used
-		if(comp_setup=='PC'):
-			home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
-		else:
-			home_gps_result_gps.config(text=(str(coords)))
+'''
+Functions for testing mavlink and OSD incoming data
+Routed from main tracking working window 
+'''
+
+#Window for testing realtime incoming messages and read coordinates
+def testingWindow():
+	global testing_window 
+	testing_window = tk.Toplevel(workWindow)
+	testing_window.title("Functionality testing")
+	testing_window.geometry(geometry_res)
+	#Mavlink message test button
+	mavlink_test = tk.Button(testing_window, command=TestMavlinkLoop)
+	global mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4
+	mavlink_test1 = tk.Label(testing_window)
+	mavlink_test2 = tk.Label(testing_window)
+	mavlink_test3 = tk.Label(testing_window)
+	mavlink_test4 = tk.Label(testing_window)
+	mavlink_test.grid(row=1,column=0, pady=5)
+	mavlink_test1.grid(row=2,column=0, pady=5)
+	mavlink_test2.grid(row=3,column=0, pady=5)
+	mavlink_test3.grid(row=4,column=0, pady=5)
+	mavlink_test4.grid(row=5,column=0, pady=5)
+
+	#OSD test buttons and labels
+	global osd_test_screenshot, osd_test_coords
+	osd_test = tk.Button(testing_window, command=TestVideoLoop)
+	osd_test.grid(row=1,column=1, pady=5)
+	osd_test_screenshot = tk.Label(testing_window)
+	osd_test_screenshot.grid(row=3,rowspan=4,column=1, pady=5)
+	osd_test_coords = tk.Label(testing_window)
+	osd_test_coords.grid(row=2,column=1, pady=5)
+	Return_btt= tk.Button(testing_window, text="Return", command=lambda: ReturnBttFn(testing_window))
+	Return_btt.grid(row=15,column=0, pady=5)
+	#System specific UI changes
+	if(comp_setup == 'PC'):
+		mavlink_test.grid(padx=100)
+		Return_btt.grid(pady=100)
+		mavlink_test.config(text="Test Mavlink incoming messages")
+		osd_test.config(text="Test OSD coordinates and processed feed")
 	else:
-		home_gps_result_gps.config(text="No home coordinates retrieved")
-	#Updates the used window at the time
-	try:
-		gps_home_window.update_idletasks()
-	except:
-		pass
-	try:
-		map_window.update_idletasks()
-	except:
-		pass
+		rp_font = font.nametofont("TkDefaultFont")
+		rp_font.configure(size=11)
+		mavlink_test1.config(font=rp_font)
+		mavlink_test2.config(font=rp_font)
+		mavlink_test3.config(font=rp_font)
+		mavlink_test4.config(font=rp_font)
+		osd_test_coords.config(font=rp_font)
+		mavlink_test.config(font=rp_font)
+		mavlink_test.config(text="Test Mavlink")
+		mavlink_test.grid(padx=65)
+		osd_test.grid(padx=85)
+		osd_test.config(text="Test OSD")
+		Return_btt.grid(pady=45)
 
 
 #Used to see if the program sees frames on the HDMI capture card before starting tracking
@@ -532,6 +576,12 @@ def TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i,it
 		else:
 			mavlink_test1.config(text = "Mavlink err")
 
+
+'''
+Mavlink and OSD sample data viewing functions and tkinter windows
+
+'''
+
 #Runs the sample video and displays read coordinates
 def SampleVideo():
 	global samplevideowindow
@@ -578,78 +628,12 @@ def SampleMavlink():
 	gps_sample = threading.Thread(target=mavlink_msg_recieving.get_gps_logs,args=(the_connection_sample, mavlink_sample1, mavlink_sample2, mavlink_sample3, mavlink_sample4, sampleMavlinkWindow))
 	gps_sample.start()
 	Return_btt.grid(row=1,column=1)
+
+
 '''
-Gets current OSD displayed coordinates for setting that as the home position
-Drone coordinates must be close to the ground station and the heading must be the same as the 0 position of the tracker.
+Main tracking logic and UI updating loop
+
 '''
-def OSDHomePos():
-	global coords
-	coords = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, preload_knn.knn, False)
-	if(comp_setup=='PC'): #Updates label with read coordinates depending on system
-		home_gps_result.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[2]) + "  Altitude - " + str(coords[3])))
-	else: #Raspberry pi
-		home_gps_result.config(text=(str(coords)))
-
-#Confirms Home coordinates and destroys the window for obtaining home coordinates
-def submitOSDHome():
-	global gpshome
-	gpshome = coords
-	gps_home_window.destroy()
-	workingWindow()
-
-#Window for testing realtime incoming messages and read coordinates
-def testingWindow():
-	global testing_window 
-	testing_window = tk.Toplevel(workWindow)
-	testing_window.title("Functionality testing")
-	testing_window.geometry(geometry_res)
-	#Mavlink message test button
-	mavlink_test = tk.Button(testing_window, command=TestMavlinkLoop)
-	global mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4
-	mavlink_test1 = tk.Label(testing_window)
-	mavlink_test2 = tk.Label(testing_window)
-	mavlink_test3 = tk.Label(testing_window)
-	mavlink_test4 = tk.Label(testing_window)
-	mavlink_test.grid(row=1,column=0, pady=5)
-	mavlink_test1.grid(row=2,column=0, pady=5)
-	mavlink_test2.grid(row=3,column=0, pady=5)
-	mavlink_test3.grid(row=4,column=0, pady=5)
-	mavlink_test4.grid(row=5,column=0, pady=5)
-
-	#OSD test buttons and labels
-	global osd_test_screenshot, osd_test_coords
-	osd_test = tk.Button(testing_window, command=TestVideoLoop)
-	osd_test.grid(row=1,column=1, pady=5)
-	osd_test_screenshot = tk.Label(testing_window)
-	osd_test_screenshot.grid(row=3,rowspan=4,column=1, pady=5)
-	osd_test_coords = tk.Label(testing_window)
-	osd_test_coords.grid(row=2,column=1, pady=5)
-	Return_btt= tk.Button(testing_window, text="Return", command=lambda: ReturnBttFn(testing_window))
-	Return_btt.grid(row=15,column=0, pady=5)
-	#System specific UI changes
-	if(comp_setup == 'PC'):
-		mavlink_test.grid(padx=100)
-		Return_btt.grid(pady=100)
-		mavlink_test.config(text="Test Mavlink incoming messages")
-		osd_test.config(text="Test OSD coordinates and processed feed")
-	else:
-		rp_font = font.nametofont("TkDefaultFont")
-		rp_font.configure(size=11)
-		mavlink_test1.config(font=rp_font)
-		mavlink_test2.config(font=rp_font)
-		mavlink_test3.config(font=rp_font)
-		mavlink_test4.config(font=rp_font)
-		osd_test_coords.config(font=rp_font)
-		mavlink_test.config(font=rp_font)
-		mavlink_test.config(text="Test Mavlink")
-		mavlink_test.grid(padx=65)
-		osd_test.grid(padx=85)
-		osd_test.config(text="Test OSD")
-		Return_btt.grid(pady=45)
-
-#Function for closing the called window
-def ReturnBttFn(window):
-	window.destroy()
 
 #Starts the tracking loop without freezing the tkinter window
 def StartTracking():
@@ -790,6 +774,10 @@ def TrackingLoop():
 		home_coords.config(text=("Home coordinates - Invalid"))
 		loop_running = False
 
+'''
+Failsafe tracking functions
+'''
+
 #Starts a failsafe tracking loop that rotates the antenna in a large area in front of the tracker
 def StartFailsafeTracking(heading, angle):
 	global loop_running_failsafe
@@ -824,6 +812,14 @@ def HaltTracker():
 	global loop_running_failsafe, loop_running
 	loop_running_failsafe, loop_running = False, False
 	serial_com.send_cmd('exit', 0.01)
+
+'''
+Tracking UI window -
+Start, stop tracking
+Start, stop failsafe tracking
+Halt all tracking
+Move to mavlink & OSD testing window
+'''
 
 #Window with all tracking functionality
 def workingWindow():
@@ -896,6 +892,90 @@ def workingWindow():
 		Return_btt.config(bd=2, relief=tk.RAISED)
 		testing_win.grid(row=0,column=0, columnspan=2, pady=10, padx=90)
 		
+
+
+'''
+Small helping functions
+'''
+
+#Gets current OSD displayed coordinates for setting that as the home position
+#Drone coordinates must be close to the ground station and the heading must be the same as the 0 position of the tracker.
+
+def OSDHomePos():
+	global coords
+	coords = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, preload_knn.knn, False)
+	if(comp_setup=='PC'): #Updates label with read coordinates depending on system
+		home_gps_result.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[2]) + "  Altitude - " + str(coords[3])))
+	else: #Raspberry pi
+		home_gps_result.config(text=(str(coords)))
+
+#Confirms Home coordinates and destroys the window for obtaining home coordinates
+def submitOSDHome():
+	global gpshome
+	gpshome = coords
+	gps_home_window.destroy()
+	workingWindow()
+
+#Function for closing the called window
+def ReturnBttFn(window):
+	window.destroy()
+
+def GetGPS():
+	global coords
+	latlon = serial_com.getGPS()
+	#Get GPS may take 0.5-1s and if the magnetometer function gets called too early returning data might be crossed
+	#This function is used by two windows so it forces a 500ms wait on the window active at the time
+	try:
+		gps_home_window.after(500)
+	except:
+		pass
+	try:
+		map_window.after(500)
+	except:
+		pass
+	#Obtains magnetometer heading from the RP Pico
+	heading = serial_com.getMagnetometer()
+	lat = latlon[0]
+	lon = latlon[1]
+	coords = [lat,lon,0, heading] #Array with coordinates and heading and altitude
+	if(coords!="Timeout"): #Coordinates are recieved and displayed based on system used
+		if(comp_setup=='PC'):
+			home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
+		else:
+			home_gps_result_gps.config(text=(str(coords)))
+	else:
+		home_gps_result_gps.config(text="No home coordinates retrieved")
+	#Updates the used window at the time
+	try:
+		gps_home_window.update_idletasks()
+	except:
+		pass
+	try:
+		map_window.update_idletasks()
+	except:
+		pass
+
+def offsetplus(): #Heading offset function
+	global coords
+	coords[3]+=10
+	if(coords[3]>=360): #Handles magnetometer value going from 360 to 0
+		coords[3]-=360
+	if(comp_setup=='PC'): #Updates the coordinates with changed heading value
+		home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
+	else:
+		home_gps_result_gps.config(text=(str(coords)))
+
+def offsetminus(): #Heading offset function
+	global coords
+	coords[3]-=10
+	if(coords[3]<=0): #Handles magnetometer value going from 0 to 360
+		coords[3]+=360
+	if(comp_setup=='PC'): #Updates the coordinates with changed heading value
+		home_gps_result_gps.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
+	else:
+		home_gps_result_gps.config(text=(str(coords)))
+
+
 #tkinter main starting
 if __name__ == "__main__":
     main()

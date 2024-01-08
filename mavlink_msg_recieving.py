@@ -1,37 +1,30 @@
 from pymavlink import mavutil
+import pymavlink
 import numpy as np
 import tkinter as tk
 import ui_window
 import initialize_data
 
 def get_gps_mavlink(the_connection): #Main function for getting gps data from the first incoming mavlink message of type GLOBAL_POSITION_INT, VFR_HUD and GPS_RAW_INT
-    vfr = False
-    gps_raw = False
     fix_type, sat_count, heading = 0,0,0
     i=0
     while True:
-        i+=1
         try:
+            i+=1
             msg = the_connection.recv_match().to_dict()
+            
             if(msg['mavpackettype']=='GPS_RAW_INT'): #Checks for message to obtain gps 3D fix type and locked sattelite count
                 fix_type = msg['fix_type']
                 sat_count = msg['satellites_visible']
-                gps_raw = True
             if(msg['mavpackettype'] == 'VFR_HUD'): #Checks for message to obtain compass heading
-                heading = msg['heading']
-                vfr = True            
+                heading = msg['heading']     
             if(msg['mavpackettype'] == 'GLOBAL_POSITION_INT' ): #Checks for message to obtain gps latitude, longitude and relative altitude
                 temp_gps_data = np.array([int(msg['time_boot_ms']/100), heading, int(msg['hdg']/100), msg['lat']/(10000000), msg['lon']/(10000000),int(msg['relative_alt']/1000), int(fix_type), int(sat_count)])
-                if(vfr and gps_raw): #If all messages have been recieved, returns array with extracted data from messages
-                    return_gps = temp_gps_data.copy()
-                    if initialize_data.debug: #Debug print if enabled
-                        print(return_gps + "Mavlink GPS data")
-                    return return_gps
-                else: #Files might not recieve all messages if flights are done without 4Hz set on all messages
-                    return_gps = temp_gps_data.copy()
-                    return return_gps
-        except:
+                return temp_gps_data.copy()
+        except Exception as e:
             pass
+            if(initialize_data.debug):
+                print(e)
         if(i>=100000): #Timeout
             return False
 
