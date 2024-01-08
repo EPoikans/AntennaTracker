@@ -1,0 +1,6 @@
+pymavlink 2.4.41
+pyserial 3.5
+folium 0.15.1
+numpy 1.26.3
+opencv-python 4.9.0.80
+pillow 10.2.0

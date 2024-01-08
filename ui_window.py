@@ -18,10 +18,8 @@ import servo_change
 import serial_com
 import platform
 import preload_knn
-from ipyleaflet import Map, Marker, basemaps
 import folium
 from folium.plugins import MarkerCluster
-from selenium import webdriver
 
 
 '''
