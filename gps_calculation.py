@@ -64,38 +64,3 @@ def alternate_calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, headin
 		print("Direct distance: ", str(direct_distance) + " Newheading from home: " + str(newheading_from_home) + " New angle: " + str(new_angle) + " Ground distance: " + str(s)) 
 	return direct_distance, newheading_from_home, new_angle
 
-
-#Simpler calculation between two GPS points, currently doesnt calculate heading properly - retired
-#Haversine Formula - great-circle distance between two points on a sphere from longitudes and latitudes
-'''
-def calc_gps_distance(lat_home, lon_home, lat_drone, lon_drone, heading_current, angle_current, drone_alt):
-	lat1 = float(lat_home)*math.pi/180 #Home latitude
-	lat2 = float(lat_drone)*math.pi/180
-	lon1 = float(lon_home)*math.pi/180 #Home longitudeb
-	lon2 = float(lon_drone)*math.pi/180
-	
-	a = (math.sin((lat2-lat1)/2) ** 2) + math.cos(lat1) * math.cos(lat2) * (math.sin((lon2 - lon1)/2) ** 2)
-	c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-	d = 6371000 * c #Distance
-
-	y = math.sin(lon2-lat1) * math.cos(lat2)
-	x = math.cos(lat1)*math.sin(lat2) - math.sin(lat1)*math.cos(lat2)*math.cos(lon2-lon1)
-	o = math.atan2(y,x)
-	newheading_from_home = (o*180/math.pi + 360)%360
-	direct_distance = math.sqrt(drone_alt*drone_alt + d*d)
-	if(d>=5 and drone_alt >=3):
-		new_angle = math.sin(drone_alt/direct_distance)*180/math.pi
-	elif(drone_alt>=10 and d<=5):
-		new_angle = math.sin(drone_alt/2)*180/math.pi
-	elif(d<=5 and drone_alt<=3):
-		newheading_from_home = heading_current
-		new_angle = angle_current
-	else:
-		new_angle = 10
-	if(new_angle <= 5):
-		new_angle = 5
-	newheading_from_home = float(int(newheading_from_home*100)/100)
-	new_angle = float(int(new_angle*1000)/1000)
-	direct_distance = float(int(direct_distance*1000)/1000)
-	return direct_distance, newheading_from_home, new_angle
-'''

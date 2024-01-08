@@ -10,11 +10,11 @@ def headingchangeFn(heading, endheading_from_home, accelerometer, zeroHeading): 
 	global pwm_current_estimate 
 	
 	if(zeroHeading >=245): #Handles the overflow of heading values going 360 -> 0 deg
-		headingOverflow = 360-zeroHeading
+		headingOverflow = abs(zeroHeading+115 - 360)
 		if(endheading_from_home >= 0 and endheading_from_home <= headingOverflow):
 			endheading_from_home+=360
 	if(zeroHeading <=115): #Handles the overflow of heading values going 0 -> 360 deg
-		headingOverflow = 360+zeroHeading-100
+		headingOverflow = abs(zeroHeading-115+360)
 		if(endheading_from_home<=360 and endheading_from_home >= headingOverflow):
 			endheading_from_home-=360
 	headingdiff = (int(zeroHeading) - int(endheading_from_home))*(-1) #Calculates the difference between the home heading and desired heading

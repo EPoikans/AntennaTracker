@@ -11,7 +11,7 @@ global gpshome
 gpshome = []
 
 global debug #Debug variable used in most files to print variable values if value is True
-debug = False
+debug = True
 
 def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, accelerometer):
 	global accelerometer_bool #Currently retired

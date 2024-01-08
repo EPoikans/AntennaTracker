@@ -7,6 +7,7 @@ import initialize_data
 def get_gps_mavlink(the_connection): #Main function for getting gps data from the first incoming mavlink message of type GLOBAL_POSITION_INT, VFR_HUD and GPS_RAW_INT
     vfr = False
     gps_raw = False
+    fix_type, sat_count, heading = 0,0,0
     i=0
     while True:
         i+=1
@@ -26,9 +27,12 @@ def get_gps_mavlink(the_connection): #Main function for getting gps data from th
                     if initialize_data.debug: #Debug print if enabled
                         print(return_gps + "Mavlink GPS data")
                     return return_gps
+                else: #Files might not recieve all messages if flights are done without 4Hz set on all messages
+                    return_gps = temp_gps_data.copy()
+                    return return_gps
         except:
             pass
-        if(i>=10000): #Timeout
+        if(i>=100000): #Timeout
             return False
 
 def test_mavlink_connection(the_connection): #Used in testing mavlink window, returns the first incoming message after function is called
@@ -65,7 +69,6 @@ def get_gps_logs(the_connection,mavlink_sample1,mavlink_sample2,mavlink_sample3,
                 temp_gps_data = np.array([int(msg['time_boot_ms']/100), heading, int(msg['hdg']/100), msg['lat']/(10000000), msg['lon']/(10000000),int(msg['relative_alt']/1000), int(fix_type), int(sat_count)])
                 if(j==0): #Updates sample mavlink window first textbox with gps data
                     mavlink_sample1.config(text="") #Clears first textbox
-                    sampleMavlinkWindow.update_idletasks() #Updates sample mavlink window to not freeze tkinter loop
                     copyarray = temp_gps_data.copy() #Copies gps data array to not change the original
                     mavlink_sample1.config(text=("Alivetime - " + str(int(copyarray[0])) + " Compass HDG - " + str(int(copyarray[1])) + " GPS HDG - " +str(int(copyarray[2])) +" Lat - " + str(copyarray[3]) + " Lon - " +str(copyarray[4]) +" Rel Alt - " + str(int(copyarray[5])) +" Fix type - " + str(int(copyarray[6])) +" Sat - " + str(int(copyarray[7]))))
                     sampleMavlinkWindow.update_idletasks() #Refreshes sample window
@@ -73,7 +76,6 @@ def get_gps_logs(the_connection,mavlink_sample1,mavlink_sample2,mavlink_sample3,
 
                 if(j==1): #Updates sample mavlink window second textbox with gps data
                     mavlink_sample2.config(text="") #Clears second textbox
-                    sampleMavlinkWindow.update_idletasks() #Updates sample mavlink window to not freeze tkinter loop
                     copyarray = temp_gps_data.copy() #Copies gps data array to not change the original
                     mavlink_sample2.config(text=("Alivetime - " + str(int(copyarray[0])) + " Compass HDG - " + str(int(copyarray[1])) + " GPS HDG - " +str(int(copyarray[2])) +" Lat - " + str(copyarray[3]) + " Lon - " +str(copyarray[4]) +" Rel Alt - " + str(int(copyarray[5])) +" Fix type - " + str(int(copyarray[6])) +" Sat - " + str(int(copyarray[7]))))
                     sampleMavlinkWindow.update_idletasks() #Refreshes sample window
@@ -81,7 +83,6 @@ def get_gps_logs(the_connection,mavlink_sample1,mavlink_sample2,mavlink_sample3,
 
                 if(j==2):   #Updates sample mavlink window third textbox with gps data
                     mavlink_sample3.config(text="") #Clears third textbox
-                    sampleMavlinkWindow.update_idletasks() #Updates sample mavlink window to not freeze tkinter loop
                     copyarray = temp_gps_data.copy() #Copies gps data array to not change the original
                     mavlink_sample3.config(text=("Alivetime - " + str(int(copyarray[0])) + " Compass HDG - " + str(int(copyarray[1])) + " GPS HDG - " +str(int(copyarray[2])) +" Lat - " + str(copyarray[3]) + " Lon - " +str(copyarray[4]) +" Rel Alt - " + str(int(copyarray[5])) +" Fix type - " + str(int(copyarray[6])) +" Sat - " + str(int(copyarray[7]))))
                     sampleMavlinkWindow.update_idletasks() #Refreshes sample window
@@ -89,7 +90,6 @@ def get_gps_logs(the_connection,mavlink_sample1,mavlink_sample2,mavlink_sample3,
 
                 if(j==3):  #Updates sample mavlink window fourth textbox with gps data
                     mavlink_sample4.config(text="") #Clears fourth textbox
-                    sampleMavlinkWindow.update_idletasks() #Updates sample mavlink window to not freeze tkinter loop
                     copyarray = temp_gps_data.copy() #Copies gps data array to not change the original
                     mavlink_sample4.config(text=("Alivetime - " + str(int(copyarray[0])) + " Compass HDG - " + str(int(copyarray[1])) + " GPS HDG - " +str(int(copyarray[2])) +" Lat - " + str(copyarray[3]) + " Lon - " +str(copyarray[4]) +" Rel Alt - " + str(int(copyarray[5])) +" Fix type - " + str(int(copyarray[6])) +" Sat - " + str(int(copyarray[7]))))
                     sampleMavlinkWindow.update_idletasks() #Refreshes sample window
@@ -102,7 +102,7 @@ def get_gps_logs(the_connection,mavlink_sample1,mavlink_sample2,mavlink_sample3,
                     j=0
                 
                 
-                if((msg['time_boot_ms']/100)>=3000): #Stops the sample after drone alivetime in a recieved message is over 3000ms
+                if((msg['time_boot_ms']/100)>=3000): #Stops the sample after drone alivetime in a recieved message is over 30 seconds
                     savei = i #Enables the end of sample if statement
         except:
             pass

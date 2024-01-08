@@ -21,10 +21,11 @@ import preload_knn
 from ipyleaflet import Map, Marker, basemaps
 import folium
 from folium.plugins import MarkerCluster
+from selenium import webdriver
 
 #UI debug/testing options
 global debugRaspi, debugPC
-debugRaspi = True #Forces raspberry pi UI
+debugRaspi = False #Forces raspberry pi UI
 debugPC = False #Forces PC UI
 
 def main(): #Main tkinter loop
@@ -206,7 +207,7 @@ def initialize():
 
 					if(coords!="Timeout"): #Coordinates are recieved and displayed based on system used
 						if(comp_setup == 'PC'):
-							home_gps_result_mav.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[2]) + "  Altitude - " + str(coords[3])))
+							home_gps_result_mav.config(text=("Latitude - " + str(coords[0]) + "  Longitude - " + str(coords[1]) + "  Heading - " + str(coords[3]) + "  Altitude - " + str(coords[2])))
 						else:
 							home_gps_result_mav.config(text=(coords))
 					else: #Coordinates not recieved error messages
@@ -507,16 +508,16 @@ def TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i,it
 		msg = mavlink_msg_recieving.test_mavlink_connection(initialize_data.the_connection) #Recieves single message
 		if(msg):
 			if(i==0): #Displays on apropriate label based on iteration
-				mavlink_test1.config(text = str(msg["mavpackettype"]))
+				mavlink_test1.config(text = str(msg.get('mavpackettype', '')))
 				testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1,iter+1))
 			if(i==1):
-				mavlink_test2.config(text = str(msg["mavpackettype"]))
+				mavlink_test2.config(text = str(msg.get('mavpackettype', '')))
 				testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1,iter+1))
 			if(i==2):
-				mavlink_test3.config(text = str(msg["mavpackettype"]))
+				mavlink_test3.config(text = str(msg.get('mavpackettype', '')))
 				testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1 ,iter+1))
 			if(i==3):
-				mavlink_test4.config(text = str(msg["mavpackettype"]))
+				mavlink_test4.config(text = str(msg.get('mavpackettype', '')))
 				testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, i+1,iter+1))
 			if(i>=4):
 				testing_window.after(100, lambda: TestMavlink(mavlink_test1, mavlink_test2, mavlink_test3, mavlink_test4, 0,iter+1))
@@ -547,6 +548,8 @@ def SampleVideo():
 	Return_btt= tk.Button(samplevideowindow, text="Return", command=lambda: ReturnBttFn(samplevideowindow)) 
 	Return_btt.grid_forget() #hidden button until sample is over
 	img_processing.testvideo(samplevideofeed, initialize_data.boundingbox_arr, initialize_data.videofps, initialize_data.capture_frequency,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, preload_knn.knn, sample_videofeed_coords, sample_videofeed, samplevideowindow )
+	video_thread = threading.Thread(target=img_processing.testvideo, args=(samplevideofeed, initialize_data.boundingbox_arr, initialize_data.videofps, initialize_data.capture_frequency, initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height,initialize_data.lon_boundbox, initialize_data.lon_width, initialize_data.lon_height,initialize_data.alt_boundbox, initialize_data.alt_width, initialize_data.alt_height,initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height,initialize_data.resize, initialize_data.resize_newsize, preload_knn.knn,sample_videofeed_coords, sample_videofeed, samplevideowindow))
+	video_thread.start()
 	Return_btt.grid(row=1,column=1) 
 
 #Displays sample mavlink messages until drone alivetime is over 3000
@@ -571,7 +574,9 @@ def SampleMavlink():
 	mavlink_sample4.grid(row=5,column=0, columnspan=2, pady=5)
 	Return_btt= tk.Button(sampleMavlinkWindow, text="Return", command=lambda: ReturnBttFn(sampleMavlinkWindow))
 	Return_btt.grid_forget() #hidden button until sample is over
-	mavlink_msg_recieving.get_gps_logs(the_connection_sample,mavlink_sample1,mavlink_sample2,mavlink_sample3,mavlink_sample4, sampleMavlinkWindow)
+	#mavlink_msg_recieving.get_gps_logs(the_connection_sample,mavlink_sample1,mavlink_sample2,mavlink_sample3,mavlink_sample4, sampleMavlinkWindow)
+	gps_sample = threading.Thread(target=mavlink_msg_recieving.get_gps_logs,args=(the_connection_sample, mavlink_sample1, mavlink_sample2, mavlink_sample3, mavlink_sample4, sampleMavlinkWindow))
+	gps_sample.start()
 	Return_btt.grid(row=1,column=1)
 '''
 Gets current OSD displayed coordinates for setting that as the home position
@@ -695,11 +700,13 @@ def TrackingLoop():
 			'''
 			if(osd_for_gps):
 				#Obtains coordinates
-				drone_coords_osd = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, False, False, preload_knn.knn, False)
+				drone_coords_osd = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize , preload_knn.knn, False)
 				if(drone_coords_osd != [False, False, False, False]): #If coordinates are valid coordinates
 					lat_diff = abs(float(osd_lat_sanity) - float(drone_coords_osd[0])) 
 					lon_diff = abs(float(osd_lon_sanity) - float(drone_coords_osd[1]))
-					lastalt_osd = int(drone_coords_osd[2]) 
+					if(initialize_data.debug):
+						print(lat_diff, lon_diff, drone_coords_osd[0], drone_coords_osd[1], drone_coords_osd[2], drone_coords_osd[3] )
+					lastalt_osd = int(drone_coords_osd[3]) 
 					if((lat_diff <= 0.009 and lon_diff <= 0.009) or skipfirstosd == 1): #About 500m distance change from last coordinate
 						osd_lat_sanity = float(drone_coords_osd[0])
 						osd_lon_sanity = float(drone_coords_osd[1])
@@ -718,7 +725,8 @@ def TrackingLoop():
 			'''
 			if(mavlink_for_gps):
 				drone_coords_mav = mavlink_msg_recieving.get_gps_mavlink(initialize_data.the_connection)
-				print(str(drone_coords_mav[3]), str(drone_coords_mav[4]) + 'coords')
+				if(initialize_data.debug):
+					print(str(drone_coords_mav) + 'Mav')
 				if(isinstance(drone_coords_mav, np.ndarray)):
 					lat_diff = abs(float(mav_lat_sanity) - float(drone_coords_mav[3]))
 					lon_diff = abs(float(mav_lon_sanity) - float(drone_coords_mav[4]))
@@ -726,7 +734,6 @@ def TrackingLoop():
 					if((lat_diff <= 0.01 and lon_diff <= 0.01) or skipfirstmav == 1): #About 1-1.5km distance change from last coordinate
 						mav_lat_sanity = float(drone_coords_mav[3])
 						mav_lon_sanity = float(drone_coords_mav[4])
-						print(mav_lat_sanity, mav_lon_sanity)
 						if(skipfirstmav == 1):
 							skipfirstmav +=1
 					else: #If difference is too big too many times sanity stops the tracking to failsafe tracking
@@ -750,10 +757,13 @@ def TrackingLoop():
 			
 			elif(osd_for_gps and not mavlink_for_gps): #If only OSD is used
 				drone_coords = [float(osd_lat_sanity),float(osd_lon_sanity),int(lastalt_osd)]
+				if(initialize_data.debug):
+					print(drone_coords, dronecoords_save)
 				dronecoords_save = drone_coords
 			elif(mavlink_for_gps and not osd_for_gps): #If only mavlink is used
 				drone_coords = [float(mav_lat_sanity),float(mav_lon_sanity),int(lastalt_mav)]
-				print(drone_coords, dronecoords_save)
+				if(initialize_data.debug):
+					print(drone_coords, dronecoords_save)
 				dronecoords_save = drone_coords
 			else:
 				drone_coords = dronecoords_save #If coordinates are faulty sets last good coordinates

@@ -57,7 +57,7 @@ def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, l
 		if not framestatus:
 			raise Exception [False, False, False, False] #On error returns all coords values as false 
 		grayframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #Converts the frame to grayscale
-		framestatus2, tresholdframe = cv2.threshold(grayframe,235,255,cv2.THRESH_TOZERO) #Removes background
+		framestatus2, tresholdframe = cv2.threshold(grayframe,210,255,cv2.THRESH_TOZERO) #Removes background
 		if not framestatus2:
 			raise Exception [False, False, False, False] #On error returns all coords values as false
 		returnimg = tresholdframe.copy() #Copies image that gets returned if in OSD testing mode
@@ -83,18 +83,18 @@ def video_get_gps(videofeed,lat_boundbox, lat_width, lat_height, lon_boundbox, l
 				alt = int(results[i][0])
 			if(results[i][1] == 'heading'):
 				heading = int(results[i][0])
-		coords = [lat, lon, heading, alt] #Coordinate array 
+		coords = [lat, lon, alt, heading] #Coordinate array 
 		if(initialize_data.debug): #Debug statement
-			coordstest = locals().get('coords', 'Null')
-			print(str(coordstest) + 'OSD coordinates')
+			print(str(lat) + str(lon) + str(alt) +  str(heading) + ' OSD coordinates')
 		if(testosd): #If in OSD testing mode, returns the coordinates and the image
 			return coords, returnimg
 		else:
 			return coords
-	except:
+	except Exception as e:
 		if(initialize_data.debug): #Debug statement
 			coordstest = locals().get('coords', 'Null')
-			print(str(coordstest) + 'OSD coordinates')
+			print(str(coordstest) + ' OSD coordinates')
+			print(e)
 		return [False, False, False, False] #On error returns all coords values as false
 
 
@@ -110,7 +110,7 @@ def testvideo(videofeed, boundingbox_arr, videofps, capture_frequency,lat_boundb
 			sample_videofeed_coords.config(text=('No more frames, stopping'))
 			break
 		grayframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #Converts the frame to grayscale
-		framestatus2, tresholdframe = cv2.threshold(grayframe,235,255,cv2.THRESH_TOZERO) #Removes background
+		framestatus2, tresholdframe = cv2.threshold(grayframe,210,255,cv2.THRESH_TOZERO) #Removes background
 		if not framestatus2: #If no more frames, stops the loop
 			sample_videofeed_coords.config(text=('No more frames, stopping'))
 			break
@@ -134,7 +134,7 @@ def testvideo(videofeed, boundingbox_arr, videofps, capture_frequency,lat_boundb
 				alt = int(results[i][0])
 			if(results[i][1] == 'heading'):
 				heading = int(results[i][0])
-		coords = [lat, lon, heading, alt] #Coordinate array
+		coords = [lat, lon, alt, heading] #Coordinate array
 		cv2.drawContours(tresholdframe, boundingbox_arr, -1 ,(255,255,255), 1) #Draws bounding boxes to the frame
 		updateSampleVid(sample_videofeed_coords, sample_videofeed, tresholdframe.copy(), coords, samplevideowindow) #Updates the sample video window
 		
