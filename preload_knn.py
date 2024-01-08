@@ -2,7 +2,7 @@ import platform
 import cv2
 import numpy as np
 
-debug = True
+debug = False
 
 def knn_accuracy_test(knn,train_array,trainedlabels): #Checks that the neural network can recognise the dataset with 100% accuracy
 	ret,result,neighbours,dist = knn.findNearest(train_array,k=1) #K-Nearest Neighbors Algorithm, simple and fast enough for 10 digits with a single font with small white noise.

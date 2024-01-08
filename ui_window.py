@@ -41,7 +41,7 @@ ui_window.py structure -
 
 #UI debug/testing options
 global debugRaspi, debugPC
-debugRaspi = False #Forces raspberry pi UI
+debugRaspi = True #Forces raspberry pi UI
 debugPC = False #Forces PC UI
 
 '''
@@ -256,8 +256,10 @@ def initialize():
 				else: #Error message in the main page if mavlink home is selected without mavlink functionality for realtime GPS coordinates
 					if(comp_setup == 'PC'):
 						error_label.config(text="Mavlink for GPS position is needed to obtain home coordinates via Mavlink")
+						gps_home_window.destroy()
 					else: #Shortened error message for raspberry pi UI
 						error_label.config(text="Mavlink GPS home err")
+						gps_home_window.destroy()
 
 			#Second path using OSD for obtaining home coordinates
 			if(home_gps_select == 2):
@@ -288,16 +290,18 @@ def initialize():
 						home_gps_confirm.config(font=(font.nametofont("TkDefaultFont"), 20), bd=8, relief=tk.RAISED)
 						Return_btt.config(font=(font.nametofont("TkDefaultFont"), 20), bd=8, relief=tk.RAISED)
 						#Layout
-						home_label.grid(row=0,column=0, padx=40, pady=3)
-						home_gps_button.grid(row=1,column=0, padx=40,pady=3)
-						home_gps_result.grid(row=2,column=0, padx=40,pady=3)
-						home_gps_confirm.grid(row=3,column=0,padx=40, pady=3)
-						Return_btt.grid(row=20,column=0, padx=40,pady=3)
+						home_label.grid(row=0,column=0, padx=35, pady=3)
+						home_gps_button.grid(row=1,column=0, padx=35,pady=3)
+						home_gps_result.grid(row=2,column=0, padx=35,pady=3)
+						home_gps_confirm.grid(row=3,column=0,padx=35, pady=3)
+						Return_btt.grid(row=20,column=0, padx=35,pady=3)
 				else: #Error message in the main page if OSD home is selected without OSD functionality for realtime GPS coordinates
 					if(comp_setup == 'PC'):
 						error_label.config(text="OSD for GPS position is needed to obtain home coordinates via OSD")
+						gps_home_window.destroy()
 					else: #Shortened error message for raspberry pi UI
 						error_label.config(text="OSD GPS home err")
+						gps_home_window.destroy()
 
 			#Third path using ground GPS for obtaining home coordinates
 			if(home_gps_select == 3):
@@ -331,7 +335,7 @@ def initialize():
 						home_label.grid(padx=50, pady=30)
 						home_gps_result_gps.config(font=(font.nametofont("TkDefaultFont"), 16), relief=tk.SUNKEN, bd=2)
 						Return_btt.config(font=(font.nametofont("TkDefaultFont"), 22), bd=3)
-						home_gps_confirm(font=(font.nametofont("TkDefaultFont"), 22), bd=3)
+						home_gps_confirm.config(font=(font.nametofont("TkDefaultFont"), 22), bd=3)
 					else: #Raspberry pi UI
 						#Font size and choice and alternate text
 						home_label.config(text="GPS data from station", font=(font.nametofont("TkDefaultFont"), 20))
@@ -351,6 +355,7 @@ def initialize():
 						offset_compass2.grid(row=20, column=1, pady=5)
 				else: #Error message in the main page if GPS module is not connected to the raspberry pi pico
 					error_label.config(text="No response from GPS module")
+					gps_home_window.destroy()
 		else: #Error message in the main page if neither OSD or Mavlink is selected for realtime GPS coordinates
 			if(comp_setup == 'PC'):
 				error_label.config(text="Select the method for recieving realtime GPS coordinates")
@@ -627,7 +632,7 @@ def SampleMavlink():
 	#mavlink_msg_recieving.get_gps_logs(the_connection_sample,mavlink_sample1,mavlink_sample2,mavlink_sample3,mavlink_sample4, sampleMavlinkWindow)
 	gps_sample = threading.Thread(target=mavlink_msg_recieving.get_gps_logs,args=(the_connection_sample, mavlink_sample1, mavlink_sample2, mavlink_sample3, mavlink_sample4, sampleMavlinkWindow))
 	gps_sample.start()
-	Return_btt.grid(row=1,column=1)
+	Return_btt.grid(row=6,column=1)
 
 
 '''
@@ -873,7 +878,8 @@ def workingWindow():
 		Failsafe_Label.config(text="Failsafe")
 		Failsafe_btt.config(text="StartF", bd=2, relief=tk.RAISED)
 		Failsafestop_btt.config(text="StopF", bd=2, relief=tk.RAISED)
-		Halt_btt.config(text="Halt", bd=2, relief=tk.RAISED)
+		Halt_btt.config(text="Halt", bd=2, relief=tk.RAISED, font=(font.nametofont("TkDefaultFont"), 14))
+		Return_btt.config(bd=2, relief=tk.RAISED, font=(font.nametofont("TkDefaultFont"), 14))
 		testing_win.config(text="Test OSD & Mavlink",bd=2, relief=tk.RAISED)
 		distancefromhome.config(font=(font.nametofont("TkDefaultFont"), 10))
 		dronecoord.config(font=(font.nametofont("TkDefaultFont"), 10))
@@ -889,7 +895,6 @@ def workingWindow():
 		Failsafestop_btt.grid(row=5,column=1, pady=3)
 		Halt_btt.grid(row=6,column=0, pady=3, padx=35)
 		Return_btt.grid(row=6,column=1, pady=2)
-		Return_btt.config(bd=2, relief=tk.RAISED)
 		testing_win.grid(row=0,column=0, columnspan=2, pady=10, padx=90)
 		
 

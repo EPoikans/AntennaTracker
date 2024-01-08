@@ -5,6 +5,7 @@ import ui_window
 import concurrent.futures
 from PIL import Image, ImageTk
 
+#Translates subimage to number text
 def img_to_number(img_frame, resize, resize_newsize, atribute_name, knn):
 	number_contour = cv2.findContours(img_frame.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) #Finds all contours in the image
 	number_contour = number_contour[0] #Extracts only the contour data from the returned tuple
