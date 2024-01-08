@@ -41,7 +41,7 @@ ui_window.py structure -
 
 #UI debug/testing options
 global debugRaspi, debugPC
-debugRaspi = True #Forces raspberry pi UI
+debugRaspi = False #Forces raspberry pi UI
 debugPC = False #Forces PC UI
 
 '''
