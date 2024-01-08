@@ -25,7 +25,7 @@ from folium.plugins import MarkerCluster
 #UI debug/testing options
 global debugRaspi, debugPC
 debugRaspi = False #Forces raspberry pi UI
-debugPC = True #Forces PC UI
+debugPC = False #Forces PC UI
 
 def main(): #Main tkinter loop
 	global comp_setup, geometry_res

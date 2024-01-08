@@ -54,7 +54,7 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 			capture_frequency = 1 # analyzed frames per second, 1 recomened
 		else:
 			if(comp_setup == 'Raspi'):
-				videofeed = cv2.VideoCapture(0, cv2.CAP_V4L2) #Value specifies which video input device is used camera or usb hdmi capture card
+				videofeed = cv2.VideoCapture(0, cv2.CAP_ANY) #Value specifies which video input device is used camera or usb hdmi capture card
 			else:
 				videofeed = cv2.VideoCapture(0) #cv2.CAP_V4L2 is for linux compatibility and might not work for windows. No specified video api works in windows
 		while((videofeed.isOpened()!= True) and (initial == True)): #If videofeed is not opened during the initial launch waits 1s until it loads
@@ -110,7 +110,11 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 
 	if(useMavlink):
 		connect_adress = findMavlinkRadioPort('windows') #Attempts to find COM port for the mavlink SiK radio
-		testfile = './TestingFiles/2023-09-22 12-26-58.tlog' #Sample file of a flight
+		if(comp_setup == 'Raspi'):
+			testfile = '/home/pi/Desktop/AntennaTracker/TestingFiles/2023-09-22 12-26-58.tlog'
+		else:
+			testfile = './TestingFiles/2023-09-22 12-26-58.tlog' #Sample file of a flight
+		
 		if(comp_setup == 'Raspi'):
 			connect_adress = findMavlinkRadioPort('raspberrypi') #Attempts to find the linux serial port for SiK radio
 			usetestfile = False #Used for testing without connection to drone using logs like in sample viewing, should be False for actual flights
