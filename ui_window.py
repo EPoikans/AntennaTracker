@@ -24,7 +24,7 @@ from folium.plugins import MarkerCluster
 
 #UI debug/testing options
 global debugRaspi, debugPC
-debugRaspi = False #Forces raspberry pi UI
+debugRaspi = True #Forces raspberry pi UI
 debugPC = False #Forces PC UI
 
 def main(): #Main tkinter loop
@@ -89,14 +89,6 @@ def main(): #Main tkinter loop
 	system_checkbox2 = tk.Checkbutton(mainwindow, variable=system_checkbox_var2)
 	system_checkbox2.grid(row=2, column=1, sticky="w", padx=20, pady=5)
 
-	#Currently retired for accelerometer ADXL345 use
-	"""
-	global system_checkbox_var3
-	system_checkbox_var3 = tk.IntVar()
-	system_checkbox3 = tk.Checkbutton(mainwindow, text="Use accelerometer for vertical angle measurements", variable=system_checkbox_var3)
-	system_checkbox3.grid(row=4, column=1, sticky="w", padx=10, pady=5)
-	"""
-
 	#Front page buttons
 	init_button = tk.Button(mainwindow, command=initialize)
 	init_button.grid(row=5,column=0,columnspan=2, pady=35)
@@ -154,6 +146,7 @@ def main(): #Main tkinter loop
 	mainwindow.mainloop()
 
 def initialize():
+	serial_com.init_pico()
 	global home_gps_select
 	home_gps_select = home_pos_choice_selected.get()
 	global osd_for_gps
@@ -361,9 +354,10 @@ def MapTestWindow():
 	Return_btt.grid(row=0,column=1,pady=20)
 	zero_pico = tk.Button(map_window, text="Zero Servos", command=serial_com.init_pico) #Reinitializes RP Pico and servos to the default state. Must do before each map creation.
 	zero_pico.grid(row=1, column=1, pady=5)
-
-	#Magnetometer readings can be unstable due to servo motors. Compare to hand compass for accuracy and offset if needed.
-	#Generated map is North up, South down, West left, East right
+	'''
+	Magnetometer readings can be unstable due to servo motors. Compare to hand compass for accuracy and offset if needed.
+	Generated map is North up, South down, West left, East right
+	'''
 	offset_compass1 = tk.Button(map_window, text="Offset compass +10deg", command=offsetplus) 
 	offset_compass2 = tk.Button(map_window, text="Offset compass -10deg", command=offsetminus)
 	offset_compass1.grid(row=2, column=1, pady=5)
@@ -579,9 +573,10 @@ def SampleMavlink():
 	Return_btt.grid_forget() #hidden button until sample is over
 	mavlink_msg_recieving.get_gps_logs(the_connection_sample,mavlink_sample1,mavlink_sample2,mavlink_sample3,mavlink_sample4, sampleMavlinkWindow)
 	Return_btt.grid(row=1,column=1)
-
-#Obtains current OSD displayed coordinates for setting that as the home position
-#Drone coordinates must be close to the ground station and the heading must be the same as the 0 position of the tracker.
+'''
+Gets current OSD displayed coordinates for setting that as the home position
+Drone coordinates must be close to the ground station and the heading must be the same as the 0 position of the tracker.
+'''
 def OSDHomePos():
 	global coords
 	coords = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width,initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, initialize_data.resize, initialize_data.resize_newsize, preload_knn.knn, False)
@@ -668,8 +663,10 @@ def TrackingLoop():
 	global loop_running
 	global home_gps_select
 	global osd_for_gps, mavlink_for_gps, gpshome, home_coords
-	#If antenna tracker home is set by mavlink or OSD it is expected to be within couple of meters of the drone
-	#Sanity values keep unrealistic coordinates from affecting the tracking - one loop is faster than a normal drone can travel 1km
+	'''
+	If antenna tracker home is set by mavlink or OSD it is expected to be within couple of meters of the drone
+	Sanity values keep unrealistic coordinates from affecting the tracking - one loop is faster than a normal drone can travel 1km
+	'''
 	if(home_gps_select == 1 or home_gps_select == 2):
 		osd_lat_sanity = float(gpshome[0])
 		osd_lon_sanity = float(gpshome[1])
@@ -691,10 +688,11 @@ def TrackingLoop():
 		loop_running = False
 	if(len(gpshome) == 4): #Home coordinates should be a list of 4 elements - lat, lon, rel. alt, heading
 		while loop_running: #Tracking loop that is killed by StopTracking() function
-
-			#Obtains coordinates from video feed frame if the option is selected
-			#This method uses a KNN model to read the coordinates from the OSD and is more susceptible to noise and faulty reading due to snow or bright sky
-			#The sanity calculation therefore allows a max of 500m of change in coordinates from the last frame
+			'''
+			Obtains coordinates from video feed frame if the option is selected
+			This method uses a KNN model to read the coordinates from the OSD and is more susceptible to noise and faulty reading due to snow or bright sky
+			The sanity calculation therefore allows a max of 500m of change in coordinates from the last frame
+			'''
 			if(osd_for_gps):
 				#Obtains coordinates
 				drone_coords_osd = img_processing.video_get_gps(initialize_data.videofeed,initialize_data.lat_boundbox, initialize_data.lat_width, initialize_data.lat_height, initialize_data.lon_boundbox, initialize_data.lon_width,initialize_data.lon_height,initialize_data.alt_boundbox,initialize_data.alt_width,initialize_data.alt_height, initialize_data.heading_boundbox, initialize_data.heading_width, initialize_data.heading_height, False, False, preload_knn.knn, False)
@@ -713,12 +711,14 @@ def TrackingLoop():
 					osd_sanitycount+=1 #If OSD coordinates arent recieved its added to the osd sanity counter
 					if(initialize_data.debug): #Debug print
 						print(osd_sanitycount)
-			
-			#Mavlink coordinates are recieved in text format and are more reliable than OSD coordinates with a shorter range
-			#The sanity calculation allows roughly 1km deviation from last frame
-			#Faulty data should only occur if the mavlink messages get corrupted in air or drone GPS module is faulty
+			'''
+			Mavlink coordinates are recieved in text format and are more reliable than OSD coordinates with a shorter range
+			The sanity calculation allows roughly 1km deviation from last frame
+			Faulty data should only occur if the mavlink messages get corrupted in air or drone GPS module is faulty
+			'''
 			if(mavlink_for_gps):
 				drone_coords_mav = mavlink_msg_recieving.get_gps_mavlink(initialize_data.the_connection)
+				print(str(drone_coords_mav[3]), str(drone_coords_mav[4]) + 'coords')
 				if(isinstance(drone_coords_mav, np.ndarray)):
 					lat_diff = abs(float(mav_lat_sanity) - float(drone_coords_mav[3]))
 					lon_diff = abs(float(mav_lon_sanity) - float(drone_coords_mav[4]))
@@ -726,15 +726,17 @@ def TrackingLoop():
 					if((lat_diff <= 0.01 and lon_diff <= 0.01) or skipfirstmav == 1): #About 1-1.5km distance change from last coordinate
 						mav_lat_sanity = float(drone_coords_mav[3])
 						mav_lon_sanity = float(drone_coords_mav[4])
+						print(mav_lat_sanity, mav_lon_sanity)
 						if(skipfirstmav == 1):
 							skipfirstmav +=1
 					else: #If difference is too big too many times sanity stops the tracking to failsafe tracking
 						sanitycount+=1
 				else: #If mavlink doesnt recieve messages it adds to the mavlink sanity counter
 					mav_sanitycount+=1
-			
-			#If both methods for obtaining messages is used the coordinates are averaged
-			#If both methods are used but only one is working it continiues as normal with the working method
+			'''
+			If both methods for obtaining messages is used the coordinates are averaged
+			If both methods are used but only one is working it continiues as normal with the working method
+			'''
 			if(osd_for_gps and mavlink_for_gps):
 				if(isinstance(drone_coords_mav, np.ndarray) and drone_coords_osd != [False, False, False, False]): #If both methods are working
 					drone_coords = [float((osd_lat_sanity + mav_lat_sanity)/2),float((osd_lon_sanity + mav_lon_sanity)/2), int((lastalt_osd + lastalt_mav)/2)]
@@ -751,6 +753,7 @@ def TrackingLoop():
 				dronecoords_save = drone_coords
 			elif(mavlink_for_gps and not osd_for_gps): #If only mavlink is used
 				drone_coords = [float(mav_lat_sanity),float(mav_lon_sanity),int(lastalt_mav)]
+				print(drone_coords, dronecoords_save)
 				dronecoords_save = drone_coords
 			else:
 				drone_coords = dronecoords_save #If coordinates are faulty sets last good coordinates

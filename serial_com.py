@@ -49,10 +49,11 @@ def retrySerial(): #Function for retrying serial port connection called by an UI
     serial_port = findSerialPort(system)
     if debug: #Debug print
         print(serial_port)
-
-#Main function for sending any command over USB to the raspberry pi pico
-#Outgoing messages must be in string format with spaces between each parameter and a newline at the end
-#Incoming Messages are in string format and must be seperated if there are multiple parameters
+'''
+Main function for sending any command over USB to the raspberry pi pico
+Outgoing messages must be in string format with spaces between each parameter and a newline at the end
+Incoming Messages are in string format and must be seperated if there are multiple parameters
+'''
 def send_cmd(command, sleeptime):
     global serial_port
     try:
@@ -105,7 +106,7 @@ def getMagnetometer(): #Gets the magnetometer data from the pico
 
 #Sets the vertical angle servo by doing multiple substeps from the current angle to the desired angle for less physical shaking
 def setVerticalServo(pwm_freq, pwm_current_estimate):
-    servoSpeed = 25 #Speed variable that determines the number of substeps - higher is faster
+    servoSpeed = 100 #Speed variable that determines the number of substeps - higher is faster
     if isinstance(pwm_freq, int) or isinstance(pwm_freq, float): #Checks if the input is a number
         if(pwm_freq > pwm_current_estimate): #Checks if the desired angle is higher than the current angle
             pwm_diff = pwm_freq - int(pwm_current_estimate) #Calculates the difference between the angles in PWM values
@@ -131,7 +132,7 @@ def setVerticalServo(pwm_freq, pwm_current_estimate):
 #Sets the horizontal heading servo by doing multiple substeps from the current heading to the desired heading for less shaking and smoother movement
 def setHorizontalServo(pwm_freq, pwm_current_estimate):
     pwm_current_estimate = int(pwm_current_estimate)
-    servoSpeed = 50 #Speed variable that determines the number of substeps - higher is faster speed
+    servoSpeed = 100 #Speed variable that determines the number of substeps - higher is faster speed
     if debug: #Debug print
         print(str(pwm_freq), str(pwm_current_estimate) + " sethorizontalServo freq, current estimate")
     if isinstance(pwm_freq, int) or isinstance(pwm_freq, float): #Checks if the input is a number
@@ -155,8 +156,3 @@ def setHorizontalServo(pwm_freq, pwm_current_estimate):
             send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.02) #Final step to ensure the desired heading is reached
         else:
             send_cmd('setServoCycle horizon_servo '+ str(int(pwm_freq)) + '\n', 0.02) #If the heading is same as current heading sends the command once
-
-#If ADXL feature is used, returns accelerometer values
-def getAccelVal():
-    return send_cmd('getADXL' + '\n', 0.05)
-

@@ -148,6 +148,14 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 				0, 0, 0, 0, # Unused parameters
 				0,
 			)
+			the_connection.mav.command_long_send(
+				the_connection.target_system, the_connection.target_component,
+				mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL, 0,
+				24, # The MAVLink message ID for GPS_RAW_INT
+				1e6 / 4, #Number after / is the frequency per second
+				0, 0, 0, 0, # Unused parameters
+				0,
+			)
 			#For succesful message frequency change message all unused parameters should be set to 0. All possible parameters should have a value from mavlink documentation
 
 def findMavlinkRadioPort(system): #Finds the serial port for the SiK radio
