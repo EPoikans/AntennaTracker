@@ -14,9 +14,9 @@ global debug #Debug variable used in most files to print variable values if valu
 debug = False
 
 def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, accelerometer):
-	#global accelerometer_bool #Currently retired
+	global accelerometer_bool #Currently retired
 	cv2.VideoCapture(0).release() #Releases the first video device which should be a HDMI capture card incase its currently in use
-	#accelerometer_bool = bool(accelerometer) #Currently retired
+	accelerometer_bool = bool(accelerometer) #Currently retired
 	if platform.system().lower() == 'linux': #Checks if the computer is a raspberry pi or not
 		try:
 			import RPi.GPIO as GPIO #Non raspberry pi devices should not have RPi.GPIO module installed
@@ -44,7 +44,7 @@ def initialize_data(useMavlink, useOSD, homegps_type, usesamplevid, acceleromete
 			usesamplevid = False #Raspberry pi is expected to be used during actual drone flights and is set to false by default. Set to True for testing the field setup without flying.
 		else:
 			usesamplevid = True #Set to false if controlling the antenna tracker in the field with another device that isnt a raspberry pi
-		global videofeed
+		global videofeed, videofps, capture_frequency
 		
 		#usesamplevid=False #Uncomment the first # to override regardless of device for testing purposes
 		
