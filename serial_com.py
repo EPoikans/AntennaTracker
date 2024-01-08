@@ -2,7 +2,7 @@ import platform
 import serial
 import time
 
-debug = False #Debug variable for serial communication printing all responses from the pico
+debug = True #Debug variable for serial communication printing all responses from the pico
 
 def findSerialPort(system): #Finds the correct serial port for the pico
     if(system == 'linux' or system == 'raspberrypi'): #Different serial port start for linux and windows
@@ -10,7 +10,7 @@ def findSerialPort(system): #Finds the correct serial port for the pico
     elif(system == 'windows'):
         portstart = "COM"
     i=0
-    for i in range(10):
+    for i in range(256):
         serial_port = (str(portstart) + str(i)) #Combines the system start of a serial port with the number
         try:
             with serial.Serial(serial_port, 115200, timeout=2) as ser:

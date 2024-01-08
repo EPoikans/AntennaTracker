@@ -796,14 +796,14 @@ def FailsafeTracking(lastheading, lastangle):
 	global gpshome
 	homeheading = gpshome[3] #Home heading is obtained from home coordinates
 	while loop_running_failsafe:
-		workWindow.after(350) #wait 350ms between each movement
+		workWindow.after(850) #wait 850ms between each movement
 		servo_change.headingChangeFailsafe(lastheading+20, homeheading) #Turns the antenna 20 degrees to the right from last heading
 		servo_change.angleChangeFailsafe(lastangle)
-		workWindow.after(350)
+		workWindow.after(850)
 		servo_change.headingChangeFailsafe(lastheading, homeheading) #Turns the antenna back to last heading
-		workWindow.after(350)
+		workWindow.after(850)
 		servo_change.headingChangeFailsafe(lastheading-20, homeheading) #Turns the antenna 20 degrees to the left from last heading
-		workWindow.after(350)
+		workWindow.after(850)
 		servo_change.headingChangeFailsafe(lastheading, homeheading) #Turns the antenna back to last heading
 		
 #Stops all loops and kills the RP Pico program
